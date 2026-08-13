@@ -1,11 +1,15 @@
 import subprocess
+import shlex
 
 class CommandExecutor:
     ALLOWLIST = ['python', 'pytest', 'git']
 
     @staticmethod
     def is_allowed(command):
-        return command.split()[0] in CommandExecutor.ALLOWLIST
+        args = shlex.split(command)
+        if any(op in command for op in ('&&', ';', '|', '||', '>', '<')):
+            raise ValueError("Command chaining operators are not allowed")
+        return args[0] in CommandExecutor.ALLOWLIST
 
     @staticmethod
     def execute(command, timeout=30):
