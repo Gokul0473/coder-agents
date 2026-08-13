@@ -9,9 +9,10 @@ def call_ollama(prompt, model):
     data = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
-        "stream": False
+        "stream": False,
+        "keep_alive": "30m"
     }
-    response = requests.post(API_URL, headers=headers, json=data, timeout=120)
+    response = requests.post(API_URL, headers=headers, json=data, timeout=300)
     if response.status_code == 200:
         return response.json()['message']['content']
     else:
