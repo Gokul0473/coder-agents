@@ -11,7 +11,7 @@ def call_ollama(prompt, model):
         "messages": [{"role": "user", "content": prompt}],
         "stream": False
     }
-    response = requests.post(API_URL, headers=headers, json=data)
+    response = requests.post(API_URL, headers=headers, json=data, timeout=120)
     if response.status_code == 200:
         return response.json()['message']['content']
     else:
