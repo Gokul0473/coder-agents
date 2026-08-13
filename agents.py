@@ -1,9 +1,16 @@
+import re
+
 from ollama_api import call_ollama
 
 def clean_code_response(text: str) -> str:
-    # Remove Markdown code blocks
-    text = text.replace('```python\n', '').replace('\n```', '')
-    return text.strip()
+    # Remove Markdown code blocks using regex
+    code_block_pattern = r'```python\n(.*?)\n```'
+    match = re.search(code_block_pattern, text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    
+    # Strip leading/trailing backticks and whitespace
+    return text.strip('`').strip()
 
 def planner_agent(state):
     prompt = f"Task: {state.task}\n\nPlease provide a clear step-by-step action plan for this task."
