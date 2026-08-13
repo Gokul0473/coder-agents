@@ -30,6 +30,9 @@ def main():
             state = debugger_agent(state)
             
             # Re-execute the code
+            with open('generated_app.py', 'w') as f:
+                f.write(state.current_code)
+            
             result = CommandExecutor.execute('python generated_app.py')
             
             if result['returncode'] == 0:
