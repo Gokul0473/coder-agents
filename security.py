@@ -18,7 +18,7 @@ class CommandExecutor:
 
         try:
             result = subprocess.run(
-                command,
+                shlex.split(command),
                 shell=False,
                 capture_output=True,
                 text=True,
