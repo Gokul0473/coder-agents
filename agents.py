@@ -4,7 +4,7 @@ from ollama_api import call_ollama
 
 def clean_code_response(text: str) -> str:
     # Remove Markdown code blocks using regex
-    code_block_pattern = r'```python\n(.*?)\n```'
+    code_block_pattern = r'```(?:python)?\s*(.*?)\s*```'
     match = re.search(code_block_pattern, text, re.DOTALL)
     if match:
         return match.group(1).strip()
