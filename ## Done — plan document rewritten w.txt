@@ -1,0 +1,50 @@
+## Done — plan document rewritten with fresh evidence, and the round re-validated end to end
+
+### Validation (just re-run, defaults pinned explicitly)
+
+```powershell
+$env:MATHCOMPARE_MAPPING_PDF_READING_ORDER='0'   # shipped default = tag order
+$env:MATHCOMPARE_MAPPING_MONOTONE_ASSIGNMENT='1' # shipped default = monotone DP
+python -m pytest tests -q                        # PYTEST_EXIT=0  (0 failures, 12 skips)
+python tests\mapping_pair_harness.py --table     # mean F1 = 0.8182 over 16 pairs, 8/16 at 0.95
+```
+
+### Task's required results table (current defaults = tag order + monotone DP)
+
+| pair | docx | pdf | expected | predicted | TP | FP | FN | P | R | F1 | unmapped d/p | status |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 42452_2026_8956 | 2 | 2 | 2 | 2 | 2 | 0 | 0 | 1.000 | 1.000 | **1.000** | 0/0 | PENDING_REVIEW |
+| 289_2026_6571 | 8 | 8 | 8 | 8 | 8 | 0 | 0 | 1.000 | 1.000 | **1.000** | 0/0 | PENDING_REVIEW |
+| 10257_2026_743 | 141 | 141 | 141 | 141 | 141 | 0 | 0 | 1.000 | 1.000 | **1.000** | 0/0 | PENDING_REVIEW |
+| 521_2026_12379 | 8 | 8 | 8 | 8 | 8 | 0 | 0 | 1.000 | 1.000 | **1.000** | 0/0 | PENDING_REVIEW |
+| 40998_2026_1158 | 124 | 124 | 124 | 124 | 124 | 0 | 0 | 1.000 | 1.000 | **1.000** | 0/0 | PENDING_REVIEW |
+| 41315_2026_569 | 80 | 80 | 80 | 80 | 80 | 0 | 0 | 1.000 | 1.000 | **1.000** | 0/0 | PENDING_REVIEW |
+| MEC_70470 | 1 | 1 | 1 | 1 | 1 | 0 | 0 | 1.000 | 1.000 | **1.000** | 0/0 | PENDING_REVIEW |
+| 41315_2026_572 | 0 | 25 | 0 | 0 | 0 | 0 | 0 | 1.000 | 1.000 | **1.000** | 0/25 | PENDING_REVIEW |
+| 521_2026_12344 | 173 | 172 | 172 | 169 | 147 | 22 | 25 | 0.870 | 0.855 | 0.862 | 4/3 | PENDING_REVIEW |
+| 521_2026_12431 | 16 | 15 | 15 | 10 | 10 | 0 | 5 | 1.000 | 0.667 | 0.800 | 6/5 | PENDING_REVIEW |
+| 42452_2026_8948 | 139 | 140 | 139 | 91 | 86 | 5 | 53 | 0.945 | 0.619 | 0.748 | 48/49 | PENDING_REVIEW |
+| 41315_2026_544 | 95 | 62 | 62 | 62 | 43 | 19 | 19 | 0.694 | 0.694 | 0.694 | 33/0 | PENDING_REVIEW |
+| 40998_2026_1143 | 47 | 47 | 46 | 44 | 31 | 13 | 15 | 0.705 | 0.674 | 0.689 | 3/3 | PENDING_REVIEW |
+| 521_2026_12483 | 106 | 107 | 95 | 76 | 47 | 29 | 48 | 0.618 | 0.495 | 0.550 | 30/31 | PENDING_REVIEW |
+| 41315_2026_599 | 141 | 127 | 123 | 109 | 46 | 63 | 77 | 0.422 | 0.374 | 0.397 | 32/18 | PENDING_REVIEW |
+| MEC_70463 | 10 | 9 | 9 | 8 | 3 | 5 | 6 | 0.375 | 0.333 | 0.353 | 2/1 | PENDING_REVIEW |
+
+**mean F1 = 0.8182, 8/16 at the 0.95 target.** Identical-harness legacy A/B (geometric order + Hungarian): mean 0.6941, 4/16 → 9 pairs improved, 6 unchanged, 1 down by 0.004 (521_2026_12344).
+
+### Answers to the open questions (run this session, not assumed)
+
+1. **Weights are not the bottleneck.** Every content-less re-weighting variant loses on the mean (`base` 0.7815, `nopos` 0.7135, `nosection` 0.7583, `nopos_nosect` 0.7245, `label_heavy` 0.7713, `context_heavy` 0.7332, `nopos_label_ctx` 0.7261) vs engine 0.8061 on that subset. Per-pair wins (MEC_70463 0.824 with `nopos`) trade against larger losses → rejected as overfitting; documented in §3.6.
+2. **Region sequencing is already net-positive.** Global monotone DP (no Step D cuts) = 0.7990 mean; 8948 0.587 vs 0.748, 12483 0.663 vs 0.550. Region cutting is what lets local non-monotonicity through.
+3. **The real dominant error class is the reference, not our scoring.** `stray_fp = 0` and `missing = 0` in every pair (no invented mappings, no phantom reference items), but 4 pairs have order-inverting references under *both* orders: 8948 (576 inversions), 599 (116), 12483 (32), 544 (18). Order-preserving solvers are structurally capped there. Order choice evidence: tag order wins 9 pairs and loses 1 (12344: 13 vs 3 inversions); totals 757 vs 1607 → tag order default confirmed.
+4. **Content-lessness is not fatal:** 10257_2026_743 (141 DOCX math texts, 141 PDF placeholders) and 40998_2026_1158 (0 math texts, 115 placeholders) both reach **F1 1.000** on label + prose context + position alone.
+
+### Remaining failures, ranked next steps
+
+599 (0.397), 12483 (0.550), 1143 (0.689), 544 (0.694) — all dominated by `swap` (327 total) plus `partner_fn` (77, mostly 8948/12483). Next steps written into §4.4: (1) human-review the 16 `PENDING_REVIEW` fixtures; (2) reuse the existing `_monotonicize` + `monotonic_swap_margin` swap repair *after* the monotone DP inside regions; (3) give DOCX rows and PDF tag groups a shared context namespace (today `section` is dead weight cross-media); (4) consistency-based rescue for sub-floor unique candidates.
+
+### Files
+
+* **Rewritten** `MAPPING_IMPROVEMENT_PLAN.md` (675 lines) — §0 TL;DR, §1 PLAN (Steps A–F, weights/thresholds with provenance, decision log, ordering + solver rationale), §2 IMPLEMENTATION (files, exact signatures, config/env table, additive integration, "openspec deviations: none"), §3 TEST (commands, fixture semantics, per-pair before/after table, reference-structure table, residual categorisation, rejected experiments with numbers, limitations, plus the env-inheritance gotcha that silently makes pytest measure legacy behaviour), §4 HANDOFF (orientation, what works, what's fragile, ranked next steps with entry points, `temp/` tooling inventory, round-1/round-2 changelog, guardrails).
+* **New probes:** `temp/probe_global_dp.py`, `temp/probe_order_inversions.py`, `temp/content_stats.py` (+ snapshots `temp/pair_table_after.txt`, `temp/pair_table_before.txt`, `temp/full_suite_default2.txt`). `temp/` is git-ignored scratch.
+* **Unchanged code paths:** no edits to `math_mapping.py`, `math_canonicalize.py`, harness/tests, fixtures, or the comparison logic — this round was evidence + documentation. `git status` still shows only the pre-existing `.gitignore` + `run_raw_docx_tagged_compare.py` modifications (additive `attach_mapping_engine_result`), and `alignment_pairs`/`comparison_pairs` are never touched.
