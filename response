@@ -1,17 +1,13 @@
-**1. Step 1** — `pix2text` already installable; crop OK at `temp/round9_smoke_crops/pdf_exact_item_0006_page_005.png` (599, pdf item 6); `Pix2Text()` **failed**: `SSLCertVerificationError` on HF `densenet_lite_136-gru-onnx.zip` → `FileNotFoundError` under `%AppData%\cnocr\2.3\` (Python 3.14.7, Win 10.0.28000).
+**Changes made**
+- `temp/round9_step1_smoke.py` — `certifi` / `SSL_CERT_FILE` / `REQUESTS_CA_BUNDLE` / `HF_ENDPOINT` at the top (before other imports).
+- `math_pix2text_fill.py` — same block at the top (stub module for later Pix2Text use).
 
-**2. Step 2 coverage**
+**Re-run:** Step 1 still **fails**. Crop OK: `temp/round9_smoke_crops/pdf_exact_item_0006_page_005.png`.
 
-| pair | placeholders | pix2text_ok | exact_match | mean_jaccard_pix2text | mean_jaccard_baseline | est_F1_lift |
-|------|-------------:|------------:|------------:|----------------------:|----------------------:|------------:|
-| — | — | — | — | — | — | — |
+**`certifi.where()`:**  
+`C:\Users\e416417\AppData\Roaming\Python\Python314\site-packages\certifi\cacert.pem`
 
-**3. Step 3** — **STOP** (Step 1 inference never ran; Steps 2–5 not executed).
+**Error (unchanged):** `SSLCertVerificationError: certificate verify failed: self-signed certificate in certificate chain` on HF / `hf-mirror.com` when fetching `densenet_lite_136-gru-onnx.zip`, then  
+`FileNotFoundError: C:\Users\e416417\AppData\Roaming\cnocr\2.3\densenet_lite_136-gru-onnx.zip`
 
-**4. Step 4** — Not wired (`math_pix2text_fill.py` / `MATHCOMPARE_PDF_PIX2TEXT_FILL` not added).
-
-**5. Step 5 F1** — Not run (no before/after).
-
-**6.** **STOP at Step 1** — unblock cnocr ONNX download (corporate CA / pre-seed models), then re-run `temp/round9_step1_smoke.py`.
-
-**7.** Comparison stage untouched: YES.
+Certifi alone doesn’t fix this — the corporate proxy CA isn’t in that bundle. Next options: append your org CA to `REQUESTS_CA_BUNDLE`, or pre-seed the cnocr/cnstd ONNX zip under `%AppData%\Roaming\cnocr\2.3\`. Step 2 not started.
