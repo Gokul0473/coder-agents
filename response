@@ -1,49 +1,40 @@
-**Changes made**
-- `temp/round9_step1_smoke.py` — `certifi` / `SSL_CERT_FILE` / `REQUESTS_CA_BUNDLE` / `HF_ENDPOINT` at the top (before other imports).
-- `math_pix2text_fill.py` — same block at the top (stub module for later Pix2Text use).
+Round 9 (resumed) — executed exactly as instructed, **stopped at Step 2** per its explicit failure clause.
 
-**Re-run:** Step 1 still **fails**. Crop OK: `temp/round9_smoke_crops/pdf_exact_item_0006_page_005.png`.
+**1. Venv + import**
+- Venv: `C:\Users\e416417\Documents\mathcompare\.venv` — `import pix2text` **OK**. (`\.venv-mineru\Scripts\python.exe` → `ModuleNotFoundError: No module named 'pix2text'`.)
 
-**`certifi.where()`:**  
-`C:\Users\e416417\AppData\Roaming\Python\Python314\site-packages\certifi\cacert.pem`
+**2. Step 2 coverage table** — NOT RUN (smoke failed; table below is a placeholder).
 
-**Error (unchanged):** `SSLCertVerificationError: certificate verify failed: self-signed certificate in certificate chain` on HF / `hf-mirror.com` when fetching `densenet_lite_136-gru-onnx.zip`, then  
-`FileNotFoundError: C:\Users\e416417\AppData\Roaming\cnocr\2.3\densenet_lite_136-gru-onnx.zip`
+| pair | placeholders | pix2text_ok | exact_match | mean_jaccard_pix2text | mean_jaccard_baseline | est_F1_lift |
+|------|-------------:|------------:|------------:|----------------------:|----------------------:|------------:|
+| —    | —            | —           | —           | —                     | —                     | —           |
 
-Certifi alone doesn’t fix this — the corporate proxy CA isn’t in that bundle. Next options: append your org CA to `REQUESTS_CA_BUNDLE`, or pre-seed the cnocr/cnstd ONNX zip under `%AppData%\Roaming\cnocr\2.3\`. Step 2 not started.
+**3. Step 3 decision** — **STOP**: no coverage numbers, nothing wired.
 
+**4. Step 4 wiring summary**
+- `math_pix2text_fill.py` left as a stub (`fill_placeholders` still raises `NotImplementedError`).
+- No `MATHCOMPARE_PDF_PIX2TEXT_FILL` flag added; config key `pix2text_python` / env `MATHCOMPARE_PIX2TEXT_PYTHON` **not** added (gated behind the Step 3 pass that never happened).
+- No matcher/scoring/weights/canonicalization/comparison changes.
 
+**5. Step 5 per-pair F1 before/after**
 
-UAT feedfack 1:
-Please find below the feedback from our UAT testing:
+| pair | F1 before | F1 after |
+|------|----------:|---------:|
+| (all 16) | — | not run |
 
-1.  Equations highlighted in a blue box with the comment "equation missing in the source file" (and vice versa for the PDF): Upon checking, the data is present in both the source file and the PDF, making this an unnecessary error.
-2.  Equations highlighted in a yellow box with error details such as "diffuse equation" or "ambiguous_small_or_wrapped": The output in the PDF matches the source file.
-3.  MathType equations: Math comparison is not working correctly for these equations.
-4.  Incorrect equation alignment: The tool shows an "equation not matched" error because it compares the wrong equations between the source and the PDF. For example, Equation 1 in the source file is being compared with Equation 2 or another completely different equation.
-5.  Equation view: This is currently missing in the Paginated output box.
-6.  Hyperlinks: Please add hyperlinks to the corresponding error messages.
+**6. Pass or revert** — Neither applicable: **STOPPED at Step 2** (same SSL/CnOCR failure in the venv); nothing to revert.
 
-Please provide an updated version after addressing these issues. We will resume our testing once the updates are deployed.
+**7. Comparison stage untouched: YES.**
 
+---
 
-My response:
-The reported feedback points have been addressed and fixed.
+**Smoke result (verbatim, for the record):**
+- Command: `.\.venv\Scripts\python.exe temp/round9_step1_smoke.py` → **FAIL** at `Pix2Text()` init.
+- Error chain: HF/cnocr download of `densenet_lite_136-gru-onnx.zip` → `SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1082)'))` → `FileNotFoundError: [Errno 2] No such file or directory: 'C:\Users\e416417\AppData\Roaming\cnocr\2.3\densenet_lite_136-gru-onnx.zip'`.
+- Crop render OK: `temp/round9_smoke_crops/pdf_exact_item_0006_page_005.png`.
+- `%APPDATA%\Roaming\cnocr` holds only an empty `2.3\` (no cached model); shell has no SSL/CERT/HF_/REQUESTS vars.
+- Ambiguity resolved by the **smaller action**: the shipped `round9_step1_smoke.py` force-sets `SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE`/`HF_ENDPOINT` (which you forbade). I re-ran the identical script **minus those lines** (`temp/round9_step1_smoke_nocert.py`) to test the "venv already works" premise without any cert fix → *same* error. So certifi is not the cause and the venv has no cached model.
 
-Regarding point 2, some false positives may still occur, as completely eliminating them could cause actual mismatches to be misclassified as matches. Could you please check if any mismatches are incorrectly marked as matches in future tests, while disregarding a few false positive cases?
+**Only artifact changed:** `MAPPING_IMPROVEMENT_PLAN.md` (+24 lines, append-only; existing sections byte-untouched — the file is non-UTF-8/CRLF, so I binary-appended ASCII to avoid corrupting prior sections). New section: "Round 9 (resumed)" with venv path, smoke failure, Step 2–5 "not run", config key not added, and "Comparison stage untouched: YES." Scratch scripts: `temp/round9_step1_smoke_nocert.py`, `temp/append_round9_resumed.py` (both under gitignored `temp/`).
 
-
-UAT feedback 2:
-Thank you for the update. Upon checking we have found the below issues:
-
-1. Hyperlinks to the corresponding error messages--working fine.
-2.  Equation view: This is currently missing in the Paginated output box.---Not fixed.--(samples: 289-6571, 521-12344, 40998-1143)
-3. Incorrect equation alignment: The tool shows an "equation not matched" error because it compares the wrong equations between the source and the PDF. For example, Equation 1 in the source file is being compared with Equation 2 or another completely different equation.----Not fixed.
-4. MathType equations: Math comparison is not working correctly for these equations.---Partially working.---wrong mismatches done between MS doc and online PDF
-5. Equations highlighted in a blue box with the comment "equation missing in the source file" (and vice versa for the PDF): Upon checking, the data is present in both the source file and the PDF, making this an unnecessary error.--Not fixed.
-6. Equations highlighted in a yellow box with error details such as "diffuse equation" or "ambiguous_small_or_wrapped": The output in the PDF matches the source file.---Not fixed.
-
-In addition to the above points, the following issue was identified.
-
-1. The mismatched equation is shown with a yellow box instead of a red box.
-2. The mismatched equations are not being highlighted.
+**Bottom line:** the premise "a local venv already has Pix2Text working" did not hold — the model isn't cached and the corporate TLS chain blocks the cnocr model download in `.venv` too. No blocker-free path exists without a cert/CA/mirror action, which is explicitly out of scope, so I stopped rather than work around it.
