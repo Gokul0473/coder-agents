@@ -1,21 +1,80 @@
-**Smoke: Pix2Text now loads and produces LaTeX** — `temp/round9_step1_smoke_nocert.py` → EXIT=0 (`pix2text_raw='\n$$\n\cfrac{\mathsf{u s . . .}}{...}\n$$\n'`, `canonicalize()` applied). No network, no cert changes, no reinstall.
+**On-disk (read-only):** `math_canonicalize.py`, `math_mapping.py`, `run_raw_docx_tagged_compare.py` (docx extract), `temp/round9_pix2text_coverage.json`, `math_pix2text_fill.py` (stub) — present. Report: `temp/round10_analysis.md` + `.json`.
 
-**Round 9 Step 2 — coverage on the 4 hard pairs** (Round 7/8 hard set: 599, 12483, 1143, 544). Script `temp/round9_step2_coverage.py`, results `temp/round9_pix2text_coverage.json`, cache `temp/pix2text_fill_cache/`.
+### A (counts)
 
-| pair | ph_total | ph_gt | pix2text_ok | exact_match | mean_jaccard_pix2text | mean_jaccard_baseline | F1_before | sim_F1_filled | lift |
-|------|---------:|------:|------------:|------------:|----------------------:|----------------------:|----------:|--------------:|-----:|
-| 41315_2026_544  | 62  | 62  | 62  | 28 | 0.6019 | 0.0 | 0.6935 | 0.6829 | −0.0106 |
-| 40998_2026_1143 | 20  | 20  | 20  | 0  | 0.0000 | 0.0 | 0.6889 | 0.6889 |  0.0000 |
-| 41315_2026_599  | 127 | 123 | 123 | 0  | 0.1465 | 0.0 | 0.3966 | 0.3677 | −0.0288 |
-| 521_2026_12483  | 105 | 93  | 93  | 4  | 0.0469 | 0.0 | 0.5497 | 0.4651 | −0.0846 |
+| pair | docx | pdf | gt |
+|------|-----:|----:|---:|
+| 41315_2026_599 | 141 | 127 | 123 |
+| 521_2026_12483 | 106 | 107 | 95 |
+| 40998_2026_1143 | 47 | 47 | 46 |
+| 41315_2026_544 | 95 | 62 | 62 |
 
-- **pix2text_ok**: non-empty canonical. **exact_match**: canonical(p2t) == docx canonical. **jaccard**: engine `_build_tokens` multisets. **sim_F1_filled**: real simulation — filled items fed back through the *unchanged* `align_items`.
-- Two notable facts behind the numbers:
-  1. `canonicalize()` **keeps** Pix2Text's `$$` wrapper (`'$$theta_a$$'` → `'$$theta_a$$'`), so measurement strips delimiters. (No canonicalization change made.)
-  2. **1143's docx side is 100% MathType stubs** (`(MathType equation)`) and 12483 is 73/106 stubs → no reference text, jaccard degenerate; 599/12483 PDF tagged items are whole multi-equation **blocks** vs single-symbol docx items (granularity drift), so block OCR can't match symbols.
+### B — docx
 
-**Step 3 decision: STOP.** Gate (mean_jaccard ≥ 0.5 **AND** exact rate ≥ 0.5) — none pass (544 fails on exact rate 0.45; 599/12483/1143 fail jaccard). **Step 4 not wired** — no `MATHCOMPARE_PDF_PIX2TEXT_FILL`, `math_pix2text_fill.py` stays a stub, no config key, no matcher/scoring/weights change. Filling *hurts* F1 on 3 of 4 pairs anyway.
+| pair | class | n | ids (summary) |
+|------|-------|--:|---------------|
+| 599 | real_math | 141 | 1–141 |
+| 599 | mathtype_stub | 0 | — |
+| 599 | empty | 0 | — |
+| 599 | other | 0 | — |
+| 12483 | real_math | 33 | 1–8,10,14–23,26–27,58–66,90–93 |
+| 12483 | mathtype_stub | 73 | 9,11–13,19,24–25,28–57,67–89,94–106 |
+| 12483 | empty | 0 | — |
+| 12483 | other | 0 | — |
+| 1143 | real_math | 0 | — |
+| 1143 | mathtype_stub | 47 | 1–47 |
+| 1143 | empty | 0 | — |
+| 1143 | other | 0 | — |
+| 544 | real_math | 95 | 1–95 |
+| 544 | mathtype_stub | 0 | — |
+| 544 | empty | 0 | — |
+| 544 | other | 0 | — |
 
-**Plan updated:** appended `### Round 9 (resumed) - Step 2 coverage` to `MAPPING_IMPROVEMENT_PLAN.md` (append-only: 53 insertions, 0 deletions; existing sections byte-untouched). Only artifact changed.
+### C — pdf
 
-**Comparison stage untouched: YES.**
+| pair | class | n | ids (summary) |
+|------|-------|--:|---------------|
+| 599 | real_math | 0 | — |
+| 599 | placeholder | 127 | 1–127 |
+| 599 | other | 0 | — |
+| 12483 | real_math | 1 | 107 |
+| 12483 | placeholder | 106 | 1–106 |
+| 12483 | other | 0 | — |
+| 1143 | real_math | 1 | 47 |
+| 1143 | placeholder | 46 | 1–46 |
+| 1143 | other | 0 | — |
+| 544 | real_math | 0 | — |
+| 544 | placeholder | 62 | 1–62 |
+| 544 | other | 0 | — |
+
+### D — GT pair shapes (stub/placeholder/empty GT only)
+
+| pair | shape | n |
+|------|-------|--:|
+| 599 | granularity_single_docx_vs_pdf_block | 101 |
+| 599 | docx_real_vs_pdf_placeholder | 22 |
+| 12483 | docx_stub_vs_pdf_any | 65 |
+| 12483 | granularity_single_docx_vs_pdf_block | 30 |
+| 1143 | docx_stub_vs_pdf_any | 46 |
+| 544 | granularity_single_docx_vs_pdf_block | 53 |
+| 544 | docx_real_vs_pdf_placeholder | 9 |
+
+### E — sections (GT pairs with shape ≠ `both_real`)
+
+| pair | docx top sections (count) | pdf top sections (count) |
+|------|---------------------------|--------------------------|
+| 599 | inline_prose_symbol (53), inline_math (44), display_equation (25), standalone_symbol (1) | narrative_inline_group (76), display (24), table_spec_row (12), unscoped_inline (6), table_parameter_row (5) |
+| 12483 | display_equation (44), standalone_symbol (29), inline_prose_symbol (21), inline_math (1) | display (66), narrative_inline_group (17), table_parameter_row (12) |
+| 1143 | standalone_symbol (23), display_equation (14), inline_prose_symbol (9) | display (39), narrative_inline_group (7) |
+| 544 | inline_prose_symbol (43), display_equation (17), inline_math (2) | narrative_inline_group (22), table_spec_row (19), display (17), stacked_symbol_list (2), unscoped_inline (1) |
+
+### Proposed round order (per pair)
+
+| pair | order |
+|------|--------|
+| 41315_2026_599 | **R11** (always) → **R12** (gran=101); skip **R10** (mathtype=0); **R13** only if 10–12 gates pass |
+| 521_2026_12483 | **R10** (mathtype=73) → **R11** → **R12** (gran=30); then **R13** if gates pass |
+| 40998_2026_1143 | **R10** (mathtype=47, all docx); **R11**; **R12** re-check after R10 (gran=0 now because stubs mask docx side) |
+| 41315_2026_544 | **R11** → **R12** (gran=53); skip **R10**; **R13** if gates pass |
+
+**STOP** — awaiting confirmation before Round 10.
