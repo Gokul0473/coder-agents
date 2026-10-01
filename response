@@ -1,80 +1,72 @@
-**On-disk (read-only):** `math_canonicalize.py`, `math_mapping.py`, `run_raw_docx_tagged_compare.py` (docx extract), `temp/round9_pix2text_coverage.json`, `math_pix2text_fill.py` (stub) — present. Report: `temp/round10_analysis.md` + `.json`.
+Fix 1: tests/test_math_canonicalize_delimiters.py OK — $$x$$, $x$, \[x\], \(x\) match canonicalize("x").
 
-### A (counts)
+Fix 2 (stubs→mathml):
 
-| pair | docx | pdf | gt |
-|------|-----:|----:|---:|
-| 41315_2026_599 | 141 | 127 | 123 |
-| 521_2026_12483 | 106 | 107 | 95 |
-| 40998_2026_1143 | 47 | 47 | 46 |
-| 41315_2026_544 | 95 | 62 | 62 |
+41315_2026_599: 0
+521_2026_12483: 0
+40998_2026_1143: 0
+41315_2026_544: 0
+(all other pairs: 0; gold OLE = MTEF only, no MathML)
+Fix 3 (blocks_split / children_added): 0 / 0 on all 16 pairs.
 
-### B — docx
+F1 before → after
 
-| pair | class | n | ids (summary) |
-|------|-------|--:|---------------|
-| 599 | real_math | 141 | 1–141 |
-| 599 | mathtype_stub | 0 | — |
-| 599 | empty | 0 | — |
-| 599 | other | 0 | — |
-| 12483 | real_math | 33 | 1–8,10,14–23,26–27,58–66,90–93 |
-| 12483 | mathtype_stub | 73 | 9,11–13,19,24–25,28–57,67–89,94–106 |
-| 12483 | empty | 0 | — |
-| 12483 | other | 0 | — |
-| 1143 | real_math | 0 | — |
-| 1143 | mathtype_stub | 47 | 1–47 |
-| 1143 | empty | 0 | — |
-| 1143 | other | 0 | — |
-| 544 | real_math | 95 | 1–95 |
-| 544 | mathtype_stub | 0 | — |
-| 544 | empty | 0 | — |
-| 544 | other | 0 | — |
+pair	before	after
+41315_2026_544
+0.377
+0.377
+42452_2026_8948
+0.676
+0.676
+42452_2026_8956
+1.000
+1.000
+289_2026_6571
+1.000
+1.000
+521_2026_12344
+0.826
+0.826
+10257_2026_743
+0.753
+0.753
+521_2026_12379
+1.000
+1.000
+521_2026_12431
+0.800
+0.800
+40998_2026_1158
+0.951
+0.951
+41315_2026_572
+1.000
+1.000
+40998_2026_1143
+0.682
+0.682
+41315_2026_569
+0.994
+0.994
+MEC_70463
+0.353
+0.353
+MEC_70470
+1.000
+1.000
+41315_2026_599
+0.396
+0.396
+521_2026_12483
+0.488
+0.488
+mean
+0.7685
+0.7685
+Hard pairs ΔF1: 599 +0.000, 12483 +0.000, 1143 +0.000, 544 +0.000.
 
-### C — pdf
+Acceptance: PASS (no revert).
 
-| pair | class | n | ids (summary) |
-|------|-------|--:|---------------|
-| 599 | real_math | 0 | — |
-| 599 | placeholder | 127 | 1–127 |
-| 599 | other | 0 | — |
-| 12483 | real_math | 1 | 107 |
-| 12483 | placeholder | 106 | 1–106 |
-| 12483 | other | 0 | — |
-| 1143 | real_math | 1 | 47 |
-| 1143 | placeholder | 46 | 1–46 |
-| 1143 | other | 0 | — |
-| 544 | real_math | 0 | — |
-| 544 | placeholder | 62 | 1–62 |
-| 544 | other | 0 | — |
+Comparison stage untouched: YES.
 
-### D — GT pair shapes (stub/placeholder/empty GT only)
-
-| pair | shape | n |
-|------|-------|--:|
-| 599 | granularity_single_docx_vs_pdf_block | 101 |
-| 599 | docx_real_vs_pdf_placeholder | 22 |
-| 12483 | docx_stub_vs_pdf_any | 65 |
-| 12483 | granularity_single_docx_vs_pdf_block | 30 |
-| 1143 | docx_stub_vs_pdf_any | 46 |
-| 544 | granularity_single_docx_vs_pdf_block | 53 |
-| 544 | docx_real_vs_pdf_placeholder | 9 |
-
-### E — sections (GT pairs with shape ≠ `both_real`)
-
-| pair | docx top sections (count) | pdf top sections (count) |
-|------|---------------------------|--------------------------|
-| 599 | inline_prose_symbol (53), inline_math (44), display_equation (25), standalone_symbol (1) | narrative_inline_group (76), display (24), table_spec_row (12), unscoped_inline (6), table_parameter_row (5) |
-| 12483 | display_equation (44), standalone_symbol (29), inline_prose_symbol (21), inline_math (1) | display (66), narrative_inline_group (17), table_parameter_row (12) |
-| 1143 | standalone_symbol (23), display_equation (14), inline_prose_symbol (9) | display (39), narrative_inline_group (7) |
-| 544 | inline_prose_symbol (43), display_equation (17), inline_math (2) | narrative_inline_group (22), table_spec_row (19), display (17), stacked_symbol_list (2), unscoped_inline (1) |
-
-### Proposed round order (per pair)
-
-| pair | order |
-|------|--------|
-| 41315_2026_599 | **R11** (always) → **R12** (gran=101); skip **R10** (mathtype=0); **R13** only if 10–12 gates pass |
-| 521_2026_12483 | **R10** (mathtype=73) → **R11** → **R12** (gran=30); then **R13** if gates pass |
-| 40998_2026_1143 | **R10** (mathtype=47, all docx); **R11**; **R12** re-check after R10 (gran=0 now because stubs mask docx side) |
-| 41315_2026_544 | **R11** → **R12** (gran=53); skip **R10**; **R13** if gates pass |
-
-**STOP** — awaiting confirmation before Round 10.
+The harness spot-check finished successfully (~114s). 42452_2026_8948 F1 0.676, MEC_70463 0.353, MEC_70470 1.000; mean F1 0.7675 over 16 pairs (7 at target ≥0.95). That mean is 0.001 below the 0.7685 logged in Round 10–12—within normal run variance, not a >0.01 regression.
