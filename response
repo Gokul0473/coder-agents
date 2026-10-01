@@ -1,40 +1,29 @@
-Round 9 (resumed) — executed exactly as instructed, **stopped at Step 2** per its explicit failure clause.
+**Status: rec model loaded — new blocker is a different missing file. Stopping here per instructions.**
 
-**1. Venv + import**
-- Venv: `C:\Users\e416417\Documents\mathcompare\.venv` — `import pix2text` **OK**. (`\.venv-mineru\Scripts\python.exe` → `ModuleNotFoundError: No module named 'pix2text'`.)
+**1. Zip verification**
+- `%APPDATA%\Roaming\cnocr\2.3\` → path does not exist (note `%APPDATA%` already ends in `Roaming`).
+- Actual placement: `C:\Users\e416417\AppData\Roaming\cnocr\2.3\densenet_lite_136-gru-onnx.zip` :: **11,573,070 bytes** ✅ (present, not extracted, not renamed).
 
-**2. Step 2 coverage table** — NOT RUN (smoke failed; table below is a placeholder).
+**2. Smoke test** — `.\.venv\Scripts\python.exe temp/round9_step1_smoke_nocert.py` → **EXIT=1** (no network download attempted, no cert config touched, no reinstall).
+- The cnocr **rec** model now loads past the old failure point (progress).
+- New failure, at `Pix2Text()` → `CnOcr` → `CnStd` → `rapidocr`:
 
-| pair | placeholders | pix2text_ok | exact_match | mean_jaccard_pix2text | mean_jaccard_baseline | est_F1_lift |
-|------|-------------:|------------:|------------:|----------------------:|----------------------:|------------:|
-| —    | —            | —           | —           | —                     | —                     | —           |
+```
+FileNotFoundError: C:\Users\e416417\AppData\Roaming\cnstd\1.2\ppocr\multi_PP-OCRv6_det_small\PP-OCRv6_det_small.onnx does not exists.
+```
 
-**3. Step 3 decision** — **STOP**: no coverage numbers, nothing wired.
+**3. Exact missing filename (not guessed, not downloaded):**
+- `C:\Users\e416417\AppData\Roaming\cnstd\1.2\ppocr\multi_PP-OCRv6_det_small\PP-OCRv6_det_small.onnx`
+- Its target directory exists but is **empty**:
+  `C:\Users\e416417\AppData\Roaming\cnstd\1.2\ppocr\multi_PP-OCRv6_det_small\`
+- It is a **detection** model (`cnstd` PP-OCRv6_det_small). Pix2Text tried to `Fetching 4 files` (4 files expected in that dir) from:
+  `https://huggingface.co/breezedeus/cnstd-ppocr-multi_PP-OCRv6_det_small/resolve/bddaa48c239a35d1cf35fa53679a23f018b732dc/PP-OCRv6_det_small.onnx`
+- Every fetch failed with the same corporate-TLS error, then the final `FileNotFoundError` above. `%APPDATA%\Roaming\cnstd\1.2\ppocr\multi_PP-OCRv6_det_small\` and its parents exist but contain **0 files**.
 
-**4. Step 4 wiring summary**
-- `math_pix2text_fill.py` left as a stub (`fill_placeholders` still raises `NotImplementedError`).
-- No `MATHCOMPARE_PDF_PIX2TEXT_FILL` flag added; config key `pix2text_python` / env `MATHCOMPARE_PIX2TEXT_PYTHON` **not** added (gated behind the Step 3 pass that never happened).
-- No matcher/scoring/weights/canonicalization/comparison changes.
+Raw stdout/stderr captured at `temp/round9_smoke_nocert2.txt`.
 
-**5. Step 5 per-pair F1 before/after**
+**4. Round 9 Step 2 (coverage)** — **NOT resumed**; the smoke gate did not pass.
 
-| pair | F1 before | F1 after |
-|------|----------:|---------:|
-| (all 16) | — | not run |
+**What's needed (your call, I did not download):** place the cnstd detection-model files (all 4 for repo `breezedeus/cnstd-ppocr-multi_PP-OCRv6_det_small`, rev `bddaa48…`) into `C:\Users\e416417\AppData\Roaming\cnstd\1.2\ppocr\multi_PP-OCRv6_det_small\` — at minimum `PP-OCRv6_det_small.onnx`, unextracted and unrenamed, same as you did for the cnocr zip.
 
-**6. Pass or revert** — Neither applicable: **STOPPED at Step 2** (same SSL/CnOCR failure in the venv); nothing to revert.
-
-**7. Comparison stage untouched: YES.**
-
----
-
-**Smoke result (verbatim, for the record):**
-- Command: `.\.venv\Scripts\python.exe temp/round9_step1_smoke.py` → **FAIL** at `Pix2Text()` init.
-- Error chain: HF/cnocr download of `densenet_lite_136-gru-onnx.zip` → `SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1082)'))` → `FileNotFoundError: [Errno 2] No such file or directory: 'C:\Users\e416417\AppData\Roaming\cnocr\2.3\densenet_lite_136-gru-onnx.zip'`.
-- Crop render OK: `temp/round9_smoke_crops/pdf_exact_item_0006_page_005.png`.
-- `%APPDATA%\Roaming\cnocr` holds only an empty `2.3\` (no cached model); shell has no SSL/CERT/HF_/REQUESTS vars.
-- Ambiguity resolved by the **smaller action**: the shipped `round9_step1_smoke.py` force-sets `SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE`/`HF_ENDPOINT` (which you forbade). I re-ran the identical script **minus those lines** (`temp/round9_step1_smoke_nocert.py`) to test the "venv already works" premise without any cert fix → *same* error. So certifi is not the cause and the venv has no cached model.
-
-**Only artifact changed:** `MAPPING_IMPROVEMENT_PLAN.md` (+24 lines, append-only; existing sections byte-untouched — the file is non-UTF-8/CRLF, so I binary-appended ASCII to avoid corrupting prior sections). New section: "Round 9 (resumed)" with venv path, smoke failure, Step 2–5 "not run", config key not added, and "Comparison stage untouched: YES." Scratch scripts: `temp/round9_step1_smoke_nocert.py`, `temp/append_round9_resumed.py` (both under gitignored `temp/`).
-
-**Bottom line:** the premise "a local venv already has Pix2Text working" did not hold — the model isn't cached and the corporate TLS chain blocks the cnocr model download in `.venv` too. No blocker-free path exists without a cert/CA/mirror action, which is explicitly out of scope, so I stopped rather than work around it.
+**Comparison stage untouched: YES.**
