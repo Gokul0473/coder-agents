@@ -1,11 +1,21 @@
-Mode                 LastWriteTime         Length Name
-----                 -------------         ------ ----
--a----         10/1/2026   5:40 PM           1573 config.json
--a----         10/1/2026   5:43 PM       32026253 decoder_model.onnx
--a----         10/1/2026   5:42 PM       87510770 encoder_model.onnx
--a----         10/1/2026   5:40 PM            211 generation_config.json
--a----         10/1/2026   5:40 PM            450 preprocessor_config.json
--a----         10/1/2026   5:39 PM           9441 README.md
--a----         10/1/2026   5:40 PM            964 special_tokens_map.json
--a----         10/1/2026   5:43 PM         113168 tokenizer.json
--a----         10/1/2026   5:42 PM           1244 tokenizer_config.json
+**Smoke: Pix2Text now loads and produces LaTeX** — `temp/round9_step1_smoke_nocert.py` → EXIT=0 (`pix2text_raw='\n$$\n\cfrac{\mathsf{u s . . .}}{...}\n$$\n'`, `canonicalize()` applied). No network, no cert changes, no reinstall.
+
+**Round 9 Step 2 — coverage on the 4 hard pairs** (Round 7/8 hard set: 599, 12483, 1143, 544). Script `temp/round9_step2_coverage.py`, results `temp/round9_pix2text_coverage.json`, cache `temp/pix2text_fill_cache/`.
+
+| pair | ph_total | ph_gt | pix2text_ok | exact_match | mean_jaccard_pix2text | mean_jaccard_baseline | F1_before | sim_F1_filled | lift |
+|------|---------:|------:|------------:|------------:|----------------------:|----------------------:|----------:|--------------:|-----:|
+| 41315_2026_544  | 62  | 62  | 62  | 28 | 0.6019 | 0.0 | 0.6935 | 0.6829 | −0.0106 |
+| 40998_2026_1143 | 20  | 20  | 20  | 0  | 0.0000 | 0.0 | 0.6889 | 0.6889 |  0.0000 |
+| 41315_2026_599  | 127 | 123 | 123 | 0  | 0.1465 | 0.0 | 0.3966 | 0.3677 | −0.0288 |
+| 521_2026_12483  | 105 | 93  | 93  | 4  | 0.0469 | 0.0 | 0.5497 | 0.4651 | −0.0846 |
+
+- **pix2text_ok**: non-empty canonical. **exact_match**: canonical(p2t) == docx canonical. **jaccard**: engine `_build_tokens` multisets. **sim_F1_filled**: real simulation — filled items fed back through the *unchanged* `align_items`.
+- Two notable facts behind the numbers:
+  1. `canonicalize()` **keeps** Pix2Text's `$$` wrapper (`'$$theta_a$$'` → `'$$theta_a$$'`), so measurement strips delimiters. (No canonicalization change made.)
+  2. **1143's docx side is 100% MathType stubs** (`(MathType equation)`) and 12483 is 73/106 stubs → no reference text, jaccard degenerate; 599/12483 PDF tagged items are whole multi-equation **blocks** vs single-symbol docx items (granularity drift), so block OCR can't match symbols.
+
+**Step 3 decision: STOP.** Gate (mean_jaccard ≥ 0.5 **AND** exact rate ≥ 0.5) — none pass (544 fails on exact rate 0.45; 599/12483/1143 fail jaccard). **Step 4 not wired** — no `MATHCOMPARE_PDF_PIX2TEXT_FILL`, `math_pix2text_fill.py` stays a stub, no config key, no matcher/scoring/weights change. Filling *hurts* F1 on 3 of 4 pairs anyway.
+
+**Plan updated:** appended `### Round 9 (resumed) - Step 2 coverage` to `MAPPING_IMPROVEMENT_PLAN.md` (append-only: 53 insertions, 0 deletions; existing sections byte-untouched). Only artifact changed.
+
+**Comparison stage untouched: YES.**
