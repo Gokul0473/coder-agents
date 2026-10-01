@@ -1,59 +1,20 @@
-## TASK 1
+### Step 3 — first 10 NOT_IN_TOPK
 
-**git log --oneline (20):**
-```
-b467ea4 cline continue in cursor round 3
-```
-(only 1 commit; fewer than 20)
+| pair | docx_id | docx_canon | true_pdf | true_canon | true_raw | top5 (id:canon:sc) | tok_overlap | in_list | raw_st | cat | obs |
+|------|--------:|------------|--------:|------------|----------|-------------------|-------------|---------|--------|-----|-----|
+| 41315_2026_599 | 5 | j=1,...,n | 6 | - | inline-eq-IEq6 | 5:-:0.566; 4:-:0.456; 3:-:0.453; 2:-:0.446; 1:-:0.443 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 6 | xj=[dj,v_l,j,v_r,j]^⊤ | 9 | - | inline-eq-IEq9 | 3:-:0.552; 2:-:0.543; 4:-:0.533; 1:-:0.508; 5:-:0.471 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 8 | f(xj) | 11 | - | inline-eq-IEq11 | 8:-:0.515; 5:-:0.429; 4:-:0.424; 3:-:0.415; 2:-:0.406 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 11 | d_crit | 7 | - | inline-eq-IEq7 | 2:-:0.589; 10:-:0.566; 1:-:0.557; 12:-:0.501; 4:-:0.495 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 19 | beta11 | 17 | - | inline-eq-IEq17 | 12:-:0.412; 14:-:0.405; 15:-:0.396; 16:-:0.392; 8:-:0.386 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 20 | beta10^' | 18 | - | display-eq-Equ* | 12:-:0.421; 14:-:0.415; 15:-:0.405; 16:-:0.391; 11:-:0.386 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 21 | beta11^' | 19 | - | display-eq-Equ* | 12:-:0.421; 14:-:0.413; 15:-:0.404; 16:-:0.400; 11:-:0.391 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 22 | beta20 | 21 | - | inline-eq-IEq21 | 12:-:0.429; 14:-:0.423; 15:-:0.414; 16:-:0.399; 11:-:0.395 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 23 | beta21 | 22 | - | inline-eq-IEq22 | 12:-:0.429; 14:-:0.422; 15:-:0.413; 16:-:0.409; 11:-:0.397 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
+| 41315_2026_599 | 24 | beta20^' | 23 | - | inline-eq-IEq23 | 12:-:0.438; 14:-:0.432; 15:-:0.422; 16:-:0.408; 11:-:0.393 | no,no,no,no,no | yes | PLACEHOLDER | b | (b) present, raw EMPTY/SHORT/PLACEHOLDER |
 
-**git reflog (20):**
-```
-b467ea4 HEAD@{0}: commit: cline continue in cursor round 3
-997bd05 HEAD@{2}: commit: mapping improvement cline edit staged
-```
-(2 entries; fewer than 20)
+### Step 4 — tally + verdict
 
-**git show grep Round 4/5/6:** `b467ea4` — no matches; `997bd05` — file exists but no `## Round 4|5|6` sections.
+First 10: **(a)=0 (b)=10 (c)=0 (d)=0**. All 104 NOT_IN_TOPK: **(a)=0 (b)=103 (c)=1 (d)=0**. True partners are in the PDF item list but tagged PDF raw is almost always placeholder tokens with empty canonical, so rank is driven by context/position not math text; one row is (c). **Verdict:** **(b)** dominates → extraction-side fix (real math on PDF, e.g. image-to-LaTeX), not matcher/scoring/canonicalization alone.
 
-**Checked:** `temp/*MAPPING*.bak`, `*.md.orig` — none; `.cursor/` — no History; `.cline/` — absent; `997bd05:MAPPING_IMPROVEMENT_PLAN.md` — full plan, no Round 4–6 append sections.
-
-**Recovery ref:** NOT_RECOVERABLE from git/reflog. **Inserted from** `agent-transcripts/35cd44dc-1639-483a-826a-5c7e567a1c91.jsonl` (StrReplace `new_string` patches, session 2026-10-01).
-
-**Section headers:**
-```
-1:# MAPPING_IMPROVEMENT_PLAN.md
-6:## Round 3 (2026-10-01)
-58:## Round 4 (2026-10-01)
-145:## Round 5 (2026-10-01)
-181:## Round 6 (2026-10-01)
-218:## Round 7 (2026-10-01)
-```
-
----
-
-## TASK 2
-
-| # | pair | docx_id | docx_text | true_pdf_id | true_pdf_text | true_pdf_raw | top-5 candidates | token-overlap flags | observation |
-|---|------|---------|-----------|-------------|---------------|--------------|------------------|---------------------|-------------|
-| 1 | 41315_2026_599 | 5 | `j=1,...,n` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 2 | 41315_2026_599 | 6 | `xj=[dj,v_l,j,v_r,j]^T` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 3 | 41315_2026_599 | 8 | `f(xj)` | FIELD_MISSING | `that accurately predicts` | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 4 | 41315_2026_599 | 11 | `d_crit` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 5 | 41315_2026_599 | 19 | `beta01` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 6 | 41315_2026_599 | 20 | `beta00^'` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 7 | 41315_2026_599 | 21 | `beta01^'` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 8 | 41315_2026_599 | 22 | `beta11` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 9 | 41315_2026_599 | 23 | `beta10^'` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-| 10 | 41315_2026_599 | 24 | `beta11^'` | FIELD_MISSING | (empty in log) | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING | FIELD_MISSING |
-
-(docx_id from `round7_step1.json`; text/rank/consumed from `round7_step1_out2.txt` file order.)
-
-**Tally (a)/(b)/(c)/(d):** FIELD_MISSING for all 10 (observation not logged).
-
----
-
-## TASK 3
-
-**Q3.1:** no  
-**Q3.2:** no (only `pair`, `docx`, `rank`, `not_in_topk` per row)  
-**Q3.3:** NOT_IN_TOPK counts — 41315_2026_599: **41**; 521_2026_12483: **40**; 40998_2026_1143: **3**; 41315_2026_544: **20** (all four represented)
+Comparison stage untouched: YES.
