@@ -11,3 +11,39 @@
 `FileNotFoundError: C:\Users\e416417\AppData\Roaming\cnocr\2.3\densenet_lite_136-gru-onnx.zip`
 
 Certifi alone doesn’t fix this — the corporate proxy CA isn’t in that bundle. Next options: append your org CA to `REQUESTS_CA_BUNDLE`, or pre-seed the cnocr/cnstd ONNX zip under `%AppData%\Roaming\cnocr\2.3\`. Step 2 not started.
+
+
+
+UAT feedfack 1:
+Please find below the feedback from our UAT testing:
+
+1.  Equations highlighted in a blue box with the comment "equation missing in the source file" (and vice versa for the PDF): Upon checking, the data is present in both the source file and the PDF, making this an unnecessary error.
+2.  Equations highlighted in a yellow box with error details such as "diffuse equation" or "ambiguous_small_or_wrapped": The output in the PDF matches the source file.
+3.  MathType equations: Math comparison is not working correctly for these equations.
+4.  Incorrect equation alignment: The tool shows an "equation not matched" error because it compares the wrong equations between the source and the PDF. For example, Equation 1 in the source file is being compared with Equation 2 or another completely different equation.
+5.  Equation view: This is currently missing in the Paginated output box.
+6.  Hyperlinks: Please add hyperlinks to the corresponding error messages.
+
+Please provide an updated version after addressing these issues. We will resume our testing once the updates are deployed.
+
+
+My response:
+The reported feedback points have been addressed and fixed.
+
+Regarding point 2, some false positives may still occur, as completely eliminating them could cause actual mismatches to be misclassified as matches. Could you please check if any mismatches are incorrectly marked as matches in future tests, while disregarding a few false positive cases?
+
+
+UAT feedback 2:
+Thank you for the update. Upon checking we have found the below issues:
+
+1. Hyperlinks to the corresponding error messages--working fine.
+2.  Equation view: This is currently missing in the Paginated output box.---Not fixed.--(samples: 289-6571, 521-12344, 40998-1143)
+3. Incorrect equation alignment: The tool shows an "equation not matched" error because it compares the wrong equations between the source and the PDF. For example, Equation 1 in the source file is being compared with Equation 2 or another completely different equation.----Not fixed.
+4. MathType equations: Math comparison is not working correctly for these equations.---Partially working.---wrong mismatches done between MS doc and online PDF
+5. Equations highlighted in a blue box with the comment "equation missing in the source file" (and vice versa for the PDF): Upon checking, the data is present in both the source file and the PDF, making this an unnecessary error.--Not fixed.
+6. Equations highlighted in a yellow box with error details such as "diffuse equation" or "ambiguous_small_or_wrapped": The output in the PDF matches the source file.---Not fixed.
+
+In addition to the above points, the following issue was identified.
+
+1. The mismatched equation is shown with a yellow box instead of a red box.
+2. The mismatched equations are not being highlighted.
