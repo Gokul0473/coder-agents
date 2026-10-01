@@ -1,7 +1,7 @@
-Both background jobs finished successfully.
+Background jobs finished successfully:
 
-**`round6_one` (margin 0.05, pair 41315_2026_599 only):** F1 **0.369** in ~141s (baseline **0.396**).
+- **Round 7 Step 1** (`round7_step1.py`, task 503143): First run took ~15 minutes and wrote to a locked `round7_step1_out.txt`. The optimized rerun finished in ~82s and produced **`temp/round7_step1_out2.txt`** and **`temp/round7_step1.json`** (188 wrong, **104** `NOT_IN_TOPK`).
 
-**Full harness at margin 0.05 (~17 min):** mean F1 **0.7427** (baseline **0.7685**). Hard pairs: 599 **0.369**, 12483 **0.474**, 1143 **0.682** (flat), 544 **0.377** (flat). Regressions also on 8948, 1158, 12431, and 569. F1=1.000 pairs unchanged.
+- **Round 6 margin probe** (503140): Cross-region margin sweeps on selected pairs; hard-pair F1 stayed flat or dropped (e.g. 599 ~0.37–0.39, 12483 ~0.47–0.49), consistent with keeping **`MATHCOMPARE_MAPPING_CROSS_REGION_MARGIN=0`**.
 
-That lines up with Round 6: cross-region margin stays **0.0** (off); the 0.05 full run is extra evidence the trial should not ship.
+Round 7’s top-K=10 trial is **reverted** in code; details are in **`MAPPING_IMPROVEMENT_PLAN.md` § Round 7**. Note: an accidental `git checkout` on the plan file removed Rounds 4–6 from that file on disk—only Round 3 + Round 7 remain unless you restore from history or another copy.
