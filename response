@@ -1,0 +1,7 @@
+Both background jobs finished successfully.
+
+**`round6_one` (margin 0.05, pair 41315_2026_599 only):** F1 **0.369** in ~141s (baseline **0.396**).
+
+**Full harness at margin 0.05 (~17 min):** mean F1 **0.7427** (baseline **0.7685**). Hard pairs: 599 **0.369**, 12483 **0.474**, 1143 **0.682** (flat), 544 **0.377** (flat). Regressions also on 8948, 1158, 12431, and 569. F1=1.000 pairs unchanged.
+
+That lines up with Round 6: cross-region margin stays **0.0** (off); the 0.05 full run is extra evidence the trial should not ship.
