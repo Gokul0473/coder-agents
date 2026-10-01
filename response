@@ -1,1 +1,17 @@
+**1. Step 1** — `pix2text` already installable; crop OK at `temp/round9_smoke_crops/pdf_exact_item_0006_page_005.png` (599, pdf item 6); `Pix2Text()` **failed**: `SSLCertVerificationError` on HF `densenet_lite_136-gru-onnx.zip` → `FileNotFoundError` under `%AppData%\cnocr\2.3\` (Python 3.14.7, Win 10.0.28000).
 
+**2. Step 2 coverage**
+
+| pair | placeholders | pix2text_ok | exact_match | mean_jaccard_pix2text | mean_jaccard_baseline | est_F1_lift |
+|------|-------------:|------------:|------------:|----------------------:|----------------------:|------------:|
+| — | — | — | — | — | — | — |
+
+**3. Step 3** — **STOP** (Step 1 inference never ran; Steps 2–5 not executed).
+
+**4. Step 4** — Not wired (`math_pix2text_fill.py` / `MATHCOMPARE_PDF_PIX2TEXT_FILL` not added).
+
+**5. Step 5 F1** — Not run (no before/after).
+
+**6.** **STOP at Step 1** — unblock cnocr ONNX download (corporate CA / pre-seed models), then re-run `temp/round9_step1_smoke.py`.
+
+**7.** Comparison stage untouched: YES.
