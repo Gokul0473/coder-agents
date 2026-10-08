@@ -1,27 +1,28 @@
-## Round 11 report
+**1. Step 1:** PASS — MathType PNGs are on disk, in `docx_item_images`, and scored (`array`/`row_profile`/…); wrong PDF often beats GT (e.g. d9→p5 0.847 vs GT p9 0.627). No wiring fix.
 
-### Fix 1 — MathType OLE → PNG
-- **Status:** implemented (commit `f62bf86`)
-- **Files:** `docx_mathtype_ole.py` (new); `run_raw_docx_tagged_compare.py` (`extract_raw_docx_math_items` ~735, `prepare_visual_assets` ~12636); `MAPPING_IMPROVEMENT_PLAN.md` (Round 11)
-- **MathType `docx_render_path`:** 1143 **47/47**, 12483 **73/73**; 599/544 **0** MathType
-- **olefile:** not in venv; pure-Python CFB used
-- **Scoring / comparison:** unchanged
+**2. Step 2:** `run_raw_docx_tagged_compare.py` — `refine_split_pdf_blocks_after_alignment` (~10951); **not called** from pipeline. Splits attempted/accepted: **599 30/0**, **12483 11/0** (manual refine); **all other pairs 0/0** (pass disabled).
 
-### Fix 2 — PDF band split
-- **Status:** reverted (no-op)
-- **Reason:** `inputs_mapping_audit_20261008_145932` → **12/16 fail** (global `tagged_order` renumber broke alignment)
+**3. F1 (before `151111` → after `155001` with Step 2 on):**
 
-### F1 (fixture `f1`, baseline `143115` → Fix1 `144704` / `151111`)
 | pair | before | after |
 |------|--------|-------|
-| 1143 | 1.000 | 1.000 |
-| 12483 | 0.610 | 0.610 |
-| 599 | 0.368 | 0.368 |
-| 544 | 1.000 | 1.000 |
-| all 16 | unchanged | **16/16 pass** |
+| 10257_2026_743 | 0.000 | 0.000 |
+| 289_2026_6571 | 0.933 | 0.933 |
+| 40998_2026_1143 | 1.000 | 0.979 |
+| 40998_2026_1158 | 1.000 | 0.931 |
+| 41315_2026_544 | 1.000 | 1.000 |
+| 41315_2026_569 | 1.000 | 0.835 |
+| 41315_2026_572 | 1.000 | 1.000 |
+| 41315_2026_599 | 0.368 | 0.357 |
+| 42452_2026_8948 | 1.000 | 1.000 |
+| 42452_2026_8956 | 1.000 | 1.000 |
+| 521_2026_12344 | 1.000 | 1.000 |
+| 521_2026_12379 | 0.000 | 0.000 |
+| 521_2026_12431 | 1.000 | 1.000 |
+| 521_2026_12483 | 0.610 | 0.610 |
+| MEC_70463 | 1.000 | 0.222 |
+| MEC_70470 | 1.000 | 1.000 |
 
-### Acceptance
-- **Fix 1:** pass (no regression); **12483 F1 did not improve** (1143 already 1.0)
-- **Fix 2:** fail → reverted
+**4. Acceptance:** **revert** (Step 2 off; 599/12483 unchanged; several pairs &gt;0.01 down).
 
-### Comparison stage untouched: **YES**
+**5. Comparison stage untouched: YES.**
