@@ -1,72 +1,233 @@
-Fix 1: tests/test_math_canonicalize_delimiters.py OK — $$x$$, $x$, \[x\], \(x\) match canonicalize("x").
+# Mapping pipeline reference (tagged DOCX↔PDF)
 
-Fix 2 (stubs→mathml):
+## 1. ENTRY POINTS
 
-41315_2026_599: 0
-521_2026_12483: 0
-40998_2026_1143: 0
-41315_2026_544: 0
-(all other pairs: 0; gold OLE = MTEF only, no MathML)
-Fix 3 (blocks_split / children_added): 0 / 0 on all 16 pairs.
+- **Full pipeline (DOCX + tagged PDF):** `run_raw_docx_tagged_compare.py:11334` — `compare_raw_docx_to_tagged_pdf(docx_path, pdf_path, *, output_dir=None) -> dict`
+- **CLI wrapper:** `run_raw_docx_tagged_compare.py:13211` — `main` → calls `compare_raw_docx_to_tagged_pdf` then `write_comparison_artifacts` (`13220`–`13221`)
+- **Watch mode:** `tagged_watch.py:162` — calls `compare_raw_docx_to_tagged_pdf`
+- **16-pair batch:** `scripts/run_inputs_mapping_batch.py:359` — calls `compare_raw_docx_to_tagged_pdf`
 
-F1 before → after
+- **Final mapping output (docx_order ↔ pdf_order, not a single dict function):**
+  - Built in memory: `compare_raw_docx_to_tagged_pdf` sets `comparison_pairs` / `alignment_pairs` (`run_raw_docx_tagged_compare.py:11901`–`11902`)
+  - Order renumbering: `assign_final_pair_orders` (`run_raw_docx_tagged_compare.py:11841`, defined `11158`)
+  - Written to disk: `write_comparison_artifacts` → `raw_vs_tagged_alignment.json` (`run_raw_docx_tagged_compare.py:13130`, JSON at `13151`–`13154`)
+  - Batch extraction of aligned pairs: `scripts/run_inputs_mapping_batch.py:30` — `_predicted_pairs` (all `comparison_pairs` with both `docx_order` and `pdf_order`)
 
-pair	before	after
-41315_2026_544
-0.377
-0.377
-42452_2026_8948
-0.676
-0.676
-42452_2026_8956
-1.000
-1.000
-289_2026_6571
-1.000
-1.000
-521_2026_12344
-0.826
-0.826
-10257_2026_743
-0.753
-0.753
-521_2026_12379
-1.000
-1.000
-521_2026_12431
-0.800
-0.800
-40998_2026_1158
-0.951
-0.951
-41315_2026_572
-1.000
-1.000
-40998_2026_1143
-0.682
-0.682
-41315_2026_569
-0.994
-0.994
-MEC_70463
-0.353
-0.353
-MEC_70470
-1.000
-1.000
-41315_2026_599
-0.396
-0.396
-521_2026_12483
-0.488
-0.488
-mean
-0.7685
-0.7685
-Hard pairs ΔF1: 599 +0.000, 12483 +0.000, 1143 +0.000, 544 +0.000.
+**Note:** Integer keys are **`raw_order` (DOCX)** and **`tagged_order` (PDF)** exposed as `docx_order` / `pdf_order` on each pair. String ids: `docx_math_id` on DOCX items (`assign_docx_math_ids`, `738`); `semantic_id` on PDF items.
 
-Acceptance: PASS (no revert).
+**Parallel (additive, does not replace `comparison_pairs`):** `attach_mapping_engine_result` (`11286`) runs `math_mapping.align_items` and stores `mapping_engine` in the payload.
 
-Comparison stage untouched: YES.
+---
 
-The harness spot-check finished successfully (~114s). 42452_2026_8948 F1 0.676, MEC_70463 0.353, MEC_70470 1.000; mean F1 0.7675 over 16 pairs (7 at target ≥0.95). That mean is 0.001 below the 0.7685 logged in Round 10–12—within normal run variance, not a >0.01 regression.
+## 2. PIPELINE STAGES (execution order inside `compare_raw_docx_to_tagged_pdf`)
+
+| # | Stage | file:function | Input → output | Config |
+|---|--------|---------------|----------------|--------|
+| 1 | DOCX extraction | `run_raw_docx_tagged_compare.py:560` `extract_raw_docx_math_items` | DOCX path → `list[dict]` docx items | NOT FOUND (no MappingConfig) |
+| 2 | PDF extraction | `tagged_pdf_extractor.py:2121` `extract_tagged_pdf_math_items` | PDF path → `TaggedPdfMathExtractionResult` | `render_scale=2.5` at call site (`11341`) |
+| 3 | PDF context refresh | `tagged_pdf_extractor.py` `refresh_tagged_pdf_dict_contexts` | pdf path + item dicts → annotated contexts | NOT FOUND |
+| 4 | PDF context kinds | `run_raw_docx_tagged_compare.py:1431` `annotate_pdf_context_kinds` | pdf item dicts → `pdf_context_kind` | NOT FOUND |
+| 5 | Visual asset prep | `run_raw_docx_tagged_compare.py:12605` `prepare_visual_assets` | docx/pdf paths + items → crop paths map | NOT FOUND |
+| 6 | Pairwise visual score closure | `run_raw_docx_tagged_compare.py:11386` `similarity_lookup` (nested) | docx item + pdf item → `float` [0,1] | NOT FOUND |
+| 7 | Context/metadata for matches | `run_raw_docx_tagged_compare.py:11410` `match_metadata_lookup` → `_context_pair_match_metadata` (`1579`) | docx + pdf + visual → `{allowed, match_score, ...}` | Module constants (see §3) |
+| 8 | Label anchors | `build_visible_label_anchor_candidates` (`2040`), `select_visible_label_anchors`, `build_orphan_pdf_label_anchor_candidates` | docx/pdf lists → anchor list | NOT FOUND |
+| 9 | Moved/context blocks | `build_moved_symbol_block_candidates`, `build_context_table_block_candidates`, `build_context_narrative_group_candidates`, `build_selected_moved_block_groups` | candidates → fixed groups + remaining lists | `MOVED_BLOCK_*`, `SYMBOL_BLOCK_*` (`79`–`83`) |
+| 10 | Visual/mathtype anchors | `build_visual_display_anchor_candidates` (`2653`), `build_mathtype_visual_anchor_candidates`, `select_max_weight_noncrossing_anchors` | remaining items → extra anchors | `DISPLAY_ANCHOR_VISUAL_THRESHOLD` (`59`) |
+| 11 | **Segmentation + monotone DP** | `build_visual_alignment` (`4136`) → `align_monotonic_segment` (`3849`) | anchors split docx/pdf streams into segments; per segment → pairs (`aligned` / `docx_only` / `pdf_only` / `anchor`) | `DEFAULT_ALIGNMENT_BAND`/`WIDE_ALIGNMENT_BAND` (`63`–`64`), skip costs (`3807`–`3823`), `DISPLAY_MISMATCH_PENALTY` (`65`) |
+| 12 | **Refine passes** (sequential mutations of `merged_pairs`, `11560`–`11840`) | Examples: `refine_aligned_pairs_local_swaps`, `merge_docx_fixed_comparison_pairs`, `apply_leftover_context_matches`, `apply_ieq_*`, `fill_unpaired_in_reading_order`, `fix_adjacent_inverted_pdf_assignments`, `apply_mathtype_line_cluster_rebind`, `pair_numbered_display_leading_fragments`, `apply_12483_reviewed_alignment` (paper-specific) | `global_alignment_pairs` → `merged_pairs` | Many literals in `compare_raw_docx_to_tagged_pdf` body; 599/12483 gated by layout detectors |
+| 13 | **Output emission** | `assign_final_pair_orders` (`11158`), return payload (`11869`), optional `attach_mapping_engine_result` (`11286`) | `merged_pairs` → `comparison_pairs` in result dict | NOT FOUND |
+| 14 | Artifact write (if caller uses it) | `write_comparison_artifacts` (`13130`) | result dict → JSON/PDFs on disk | `render_review_pdfs` kwarg |
+
+---
+
+## 3. SCORING FUNCTION
+
+**Primary pairwise path (monotone DP and most refinements):**
+
+1. **Visual:** `run_raw_docx_tagged_compare.py:2589` — `_compare_visual_features(left, right) -> float`
+   - Invoked via `similarity_lookup` (`11386`–`11406`) from DOCX/PDF crop PNGs (`_load_feature_from_image_path`, `2585`).
+
+2. **Context blend (effective match score):** `run_raw_docx_tagged_compare.py:1579` — `_context_pair_match_metadata(docx_item, pdf_item, visual_score, *, apply_context_kind_penalty=True, numeric_equ_owners=None) -> dict`
+   - Used in DP as `effective_score = match_metadata["match_score"]` (`3939`).
+
+**Signatures:**
+```text
+_compare_visual_features(left: dict[str, np.ndarray | float], right: dict[str, np.ndarray | float]) -> float
+_context_pair_match_metadata(docx_item: dict[str, object], pdf_item: dict[str, object], visual_score: float, *, apply_context_kind_penalty: bool = True, numeric_equ_owners: set[int] | None = None) -> dict[str, object]
+similarity_lookup(docx_item: dict[str, object], pdf_item: dict[str, object]) -> float  # nested at 11386
+```
+
+**`_compare_visual_features` weights** (literals at `2637`–`2649`):
+| Feature | weight |
+|---------|--------|
+| pixel_similarity | 0.30 |
+| row_similarity | 0.15 |
+| col_similarity | 0.15 |
+| density_similarity | 0.08 |
+| aspect_similarity | 0.08 |
+| width_similarity | 0.04 |
+| height_similarity | 0.04 |
+| edge_similarity | 0.10 |
+| edge_row_similarity | 0.03 |
+| edge_col_similarity | 0.03 |
+| edge_density_similarity | 0.00 |
+
+**`_context_pair_match_metadata` (non-label path)** — literals at `1637`–`1675`, `1689`–`1690`:
+- Base: `max(visual_score * 0.30, 0.12 + 0.15 * visual_score + 0.70 * local_ctx)` where `local_ctx = _prose_neighbor_score` (`1505`)
+- Table/narrative conflict: `score *= 0.55` when `apply_context_kind_penalty`
+- Row label match thresholds: `0.74`, `0.95`, `0.80`, weak blend `0.35 + 0.35 * row_similarity`
+- Fragile token cap: `LONE_TOKEN_VISUAL_FLOOR = 0.82`, `LONE_TOKEN_PROSE_CAP = 0.55`, cap formula `0.40 + 0.40 * visual_score`
+- Trusted display label match: `match_score = max(visual_score, 0.99)` (`1623`)
+
+**DP match cost** (`3954`–`3960`):  
+`match_cost = 1.0 - effective_score + _family_penalty(...) + position_penalty + _page_alignment_penalty(...)`  
+- `_family_penalty`: `DISPLAY_MISMATCH_PENALTY = 0.35` (`3826`–`3829`)
+- `_page_alignment_penalty`: `PAGE_ALIGNMENT_PENALTY_WEIGHT = 0.12`, `ANCHOR_MAX_PAGE_OFFSET_MARGIN = 1` (`1915`–`1916`, `1962`–`1974`)
+- High-imbalance inline gate: `HIGH_IMBALANCE_RATIO = 5.0`, `HIGH_IMBALANCE_INLINE_MATCH_THRESHOLD = 0.81` (`61`–`62`, `3941`–`3946`)
+
+**MappingConfig / env:** NOT used by the tagged visual mapper above. `MappingConfig` applies only to `math_mapping.align_items` (`attach_mapping_engine_result`, `11315`).
+
+**Candidate restriction (main DP):**
+- **Segment only:** `docx_segment = docx_items[docx_prev+1:next_anchor.docx_index]`, `pdf_segment = pdf_items[pdf_prev+1:next_anchor.pdf_index]` (`4165`–`4166`)
+- **Diagonal band (not top-K):** `_alignment_state_allowed(i, j, ..., band_width)` (`3842`–`3846`): `abs(j - round(i * pdf_count / docx_count)) <= band_width`; `band_width` from `_alignment_band_width` (`3832`–`3839`): `DEFAULT_ALIGNMENT_BAND=12` or `WIDE_ALIGNMENT_BAND=24`
+- **Per (i,j) gates in DP loop:** `3849:3915`–`3938` — skip if `not _alignment_state_allowed`; on match path skip if display-like mismatch (`3935`–`3936`); skip if `not match_metadata["allowed"]` (`3937`–`3938`)
+- **Top-K:** NOT FOUND for segment DP. `SYMBOL_BLOCK_MAX_CANDIDATES_PER_PAIR = 40` (`83`) applies to moved-symbol **block** candidate builders only.
+
+---
+
+## 4. ITEM SCHEMA
+
+**DOCX item** — `dict`, built in `extract_raw_docx_math_items` (`560`–`735`); post-process annotators on same file.
+
+| Field | type (typical) | Source |
+|-------|----------------|--------|
+| `raw_order` | int | extraction loop |
+| `paragraph_index`, `paragraph_number` | int | DOCX XML |
+| `docx_page_number` | int | `estimate_docx_body_paragraph_pages` |
+| `token_index` | int | token stream |
+| `family`, `family_reason` | str | heuristics |
+| `equation_label` | str | label hints |
+| `local_math_run_type` | str | token |
+| `raw_math_text`, `cleaned_math_text` | str | OMML/MathType |
+| `canonical_math_text` | str | `canonicalize_math_text_for_similarity` |
+| `docx_match_kind`, `docx_match_kind_reason` | str | classification |
+| `docx_source_kind` | str | `"omml"` / `"mathtype"` |
+| `docx_math_id` | str | `assign_docx_math_ids` (`738`) |
+| `mathtype`, `mathtype_*` | bool/str/float | MathType OLE branch |
+| `previous_text_token`, `next_text_token`, `paragraph_text` | str | neighbour prose |
+| `docx_paragraph_in_table` | bool | table detection |
+| `omml_xml`, `empty_omath` | str/bool | OMML |
+| `docx_context_kind` | str | `annotate_docx_context_kinds` (`1284`) |
+| `docx_context_group_kind`, `docx_context_group_id`, `docx_context_group_text` | str | `annotate_docx_context_metadata` (`1324`) |
+| `docx_context_row_label`, `docx_context_before_text`, `docx_context_after_text` | str | same |
+| `paragraph_math_count` | int | same |
+
+**PDF item** — `PdfTaggedMathItem` (`equation_shared.py:256`–`294`) copied to `dict` (`11342`); plus `pdf_context_kind` from `annotate_pdf_context_kinds` (`1431`).
+
+| Field | type | Source |
+|-------|------|--------|
+| `tagged_order` | int | structure tree walk (`tagged_pdf_extractor.py:2363`) |
+| `page_number`, `page_index` | int | page info |
+| `actual_text`, `semantic_id`, `family` | str | PDF structure |
+| `equation_label`, `visible_equation_label` | str | extraction / post |
+| `x0`,`y0`,`x1`,`y1`,`width`,`height`,`area` | int | pixel bbox |
+| `bbox_points`, `bbox_pixels` | dict | points + pixels |
+| `context_before_text`, `context_after_text` | str | `refresh_tagged_pdf_dict_contexts` |
+| `context_row_label`, `context_group_kind`, `context_group_id`, `context_group_text` | str | context pass |
+| `pdf_context_kind`, `pdf_context_kind_reason` | str | `annotate_pdf_context_kinds` |
+| `source`, `type_raw`, `type_mapped`, `mcids`, … | various | extractor |
+
+**Requested names:**
+| Name | DOCX | PDF |
+|------|------|-----|
+| `raw_text` | **ABSENT** (`raw_math_text` present) | **ABSENT** (`actual_text`) |
+| `canonical_text` | **ABSENT** (`canonical_math_text`) | **ABSENT** |
+| `nearby_text` | **ABSENT** (`previous_text_token`, `next_text_token`, `docx_context_*`) | **ABSENT** (`context_before_text`, `context_after_text`) |
+| `section` | **ABSENT** on item dict | **ABSENT** |
+| `label` | **ABSENT** (`equation_label`) | **ABSENT** (`equation_label`, `visible_equation_label`) |
+| `page` | **ABSENT** (`docx_page_number`) | **ABSENT** (`page_number`) |
+| `family` | present | present |
+| `x`,`y`,`width`,`height` | **ABSENT** (no geom on DOCX items) | present as `x0`…`y1` / `width` / `height` |
+| `segment_id` | **ABSENT** | **ABSENT** |
+| `position_in_segment` | **ABSENT** | **ABSENT** |
+| `math_source` | **ABSENT** (`docx_source_kind`) | **ABSENT** (`source` e.g. `"tagged_pdf_structure"`) |
+
+---
+
+## 5. GROUND TRUTH
+
+**Regression fixtures (16 papers):** `tests/fixtures/mapping_pairs/<pair_id>.json`
+
+**Shape:** `pair_id`, `docx`, `pdf`, `status`, `expected_pairs: [[docx_order, pdf_order], ...]`, `min_f1`, counts, etc. (see `521_2026_12483.json`).
+
+**One full example pair:** `[2, 1]` (docx `raw_order` 2 → pdf `tagged_order` 1).
+
+**Human-reviewed maps (5 papers):** `tests/fixtures/reviewed_alignment_maps/<pair_id>.json` — `docx_to_pdf: {"1": "1", "2": "2", ...}` (string keys).
+
+**Loads:**
+- Batch F1 vs fixtures: `scripts/run_inputs_mapping_batch.py:55` `_fixture_expected`
+- Batch vs reviewed: `scripts/run_inputs_mapping_batch.py:67` `_reviewed_expected`
+- Pytest harness reference (sidecar): `tests/mapping_pair_harness.py:304` `expected_pairs_from_sidecar`
+- Fixture file: `tests/mapping_pair_harness.py:411` `load_fixture`
+- Gold reviewed check: `scripts/validate_gold_reviewed_mappings.py:61` `main` (reads `reviewed_alignment_maps` + `watch_output` alignments)
+
+**Counts:**
+- **Document pairs:** 16 fixture files under `mapping_pairs/`
+- **Expected aligned edges per file** (`len(expected_pairs)`):
+
+| file | count |
+|------|------:|
+| 10257_2026_743.json | 141 |
+| 289_2026_6571.json | 8 |
+| 40998_2026_1143.json | 47 |
+| 40998_2026_1158.json | 124 |
+| 41315_2026_544.json | 62 |
+| 41315_2026_569.json | 80 |
+| 41315_2026_572.json | 0 |
+| 41315_2026_599.json | 123 |
+| 42452_2026_8948.json | 139 |
+| 42452_2026_8956.json | 2 |
+| 521_2026_12344.json | 172 |
+| 521_2026_12379.json | 8 |
+| 521_2026_12431.json | 15 |
+| 521_2026_12483.json | 95 |
+| MEC_70463.json | 9 |
+| MEC_70470.json | 1 |
+
+**Total expected edges:** 1026 across all fixtures.
+
+---
+
+## 6. HARNESS
+
+**16-pair map + score (shipping mapper):**
+```text
+python scripts/run_inputs_mapping_batch.py
+```
+Re-score only: `python scripts/run_inputs_mapping_batch.py --rescore <watch_output/inputs_mapping_audit_*>` (`317`–`327`).
+
+**Per-pair F1:**
+- `tests/mapping_pair_harness.py:322` `_f1(predicted, expected)`
+- Called from `scripts/run_inputs_mapping_batch.py:108` `_compare_to_reference`
+
+**Env / config (batch script):** NOT FOUND in `run_inputs_mapping_batch.py`.
+
+**Related (different engine — `math_mapping.align_items`, not visual pipeline):**
+- `python tests/mapping_pair_harness.py --table`
+- Pytest: `tests/test_mapping_pairs.py` via `harness.evaluate_all`
+- Env: `MATHCOMPARE_MAPPING_FIXTURE_MODE` (`update`/`rewrite`), `MATHCOMPARE_MAPPING_PAIRS` (`none` skips) — `tests/mapping_pair_harness.py:52`–`53`, `34`–`36`
+
+---
+
+## 7. DEPENDENCIES
+
+| Item | Value |
+|------|--------|
+| Python (system invoke) | 3.14.7 |
+| OS | win32 10.0.28000 |
+| venv path | `.venv` (repo root) |
+| torch (`.venv`) | 2.14.0 — installed |
+| transformers (`.venv`) | 4.57.6 — installed |
+| sentence-transformers (`.venv`) | **NOT FOUND** (pip: package not found) |
+
+**Tagged mapping runtime:** OpenCV/numpy visual features (`_compare_visual_features`); no torch in that scoring path.
