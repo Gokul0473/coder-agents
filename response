@@ -1,26 +1,239 @@
-overlap: set()
-train match_score: 0.14239 0.840328 2.41342
-docx items with >1 row (multi-candidate): 141
-total unique docx items: 735
+total rows: 1076
 
-example multi-row docx: ('C:\\Users\\e416417\\Documents\\mathcompare\\watch\\10257_2026_743_MS.docx', 1)
+key presence across all rows:
+  alignment_band_width: 973/1076
+  anchor_source: 142/1076
+  before_anchor_label: 973/1076
+  block_move_id: 1062/1076
+  comparison_pdf_order: 1076/1076
+  comparison_pdf_order_end: 1076/1076
+  context_anchor_source: 988/1076
+  context_group_id: 988/1076
+  context_match_reason: 1076/1076
+  docx_family: 1076/1076
+  docx_item: 1076/1076
+  docx_label: 1076/1076
+  docx_match_kind: 1076/1076
+  docx_order: 1076/1076
+  docx_page_number: 10/1076
+  docx_path: 1076/1076
+  docx_text: 1076/1076
+  family_match: 1076/1076
+  lone_operator: 155/1076
+  low_confidence_pairing: 700/1076
+  low_confidence_visual: 972/1076
+  match_score: 972/1076
+  matched_pdf_item: 1076/1076
+  matched_pdf_items: 1076/1076
+  matcher_source: 1066/1076
+  moved_block_type: 244/1076
+  next_anchor_label: 973/1076
+  outer_delimiter_detail: 2/1076
+  outer_delimiter_mismatch: 2/1076
+  pair_context: 1066/1076
+  pair_id: 1076/1076
+  pair_kind: 1076/1076
+  pair_mode: 1076/1076
+  pair_order: 1076/1076
+  pdf_family: 1007/1076
+  pdf_label: 1007/1076
+  pdf_order: 1007/1076
+  pdf_orders: 1076/1076
+  pdf_page_number: 1007/1076
+  pdf_path: 1076/1076
+  pdf_text: 1007/1076
+  percent_paren_detail: 1/1076
+  percent_paren_mismatch: 1/1076
+  segment_index: 973/1076
+  semantic_id: 1007/1076
+  trailing_period_detail: 2/1076
+  trailing_period_mismatch: 2/1076
+  unbalanced_leading_delimiter: 19/1076
+  unbalanced_leading_delimiter_detail: 19/1076
+  unbalanced_leading_delimiter_side: 19/1076
+  visible_equation_label: 1007/1076
+  visual_score: 972/1076
+
+rows skipped (no pdf_text): 69
+distinct pdf_text values per file:
+  10257_2026_743_MS.docx: 141 distinct pdf_texts
+      'inline-eq-IEq20'
+      'inline-eq-IEq34'
+      'inline-eq-IEq131'
+      'inline-eq-IEq74'
+      'inline-eq-IEq110'
+  289_2026_6571_MS.docx: 7 distinct pdf_texts
+      'inline-eq-IEq2'
+      'display-eq-Equ2'
+      'display-eq-Equ1'
+      'inline-eq-IEq1'
+      'inline-eq-IEq3'
+  40998_2026_1143_MS.docx: 47 distinct pdf_texts
+      'inline-eq-IEq6'
+      'display-eq-Equp'
+      'display-eq-Equw'
+      'inline-eq-IEq3'
+      'display-eq-Equ11'
+  40998_2026_1158_MS.docx: 123 distinct pdf_texts
+      'inline-eq-IEq20'
+      'inline-eq-IEq34'
+      'inline-eq-IEq74'
+      'untagged-drawing-4'
+      'inline-eq-IEq27'
+  41315_2026_544_MS.docx: 62 distinct pdf_texts
+      'display-eq-Equ16'
+      'inline-eq-IEq6'
+      'inline-eq-IEq20'
+      'inline-eq-IEq57'
+      'inline-eq-IEq33'
+  41315_2026_569_MS.docx: 80 distinct pdf_texts
+      'inline-eq-IEq20'
+      'inline-eq-IEq34'
+      'inline-eq-IEq27'
+      'display-eq-Equ6'
+      'display-eq-Equ23'
+  42452_2026_8948_MS.docx: 139 distinct pdf_texts
+      'inline-eq-IEq20'
+      'inline-eq-IEq34'
+      'inline-eq-IEq74'
+      'inline-eq-IEq110'
+      'inline-eq-IEq27'
+  42452_2026_8956_MS.docx: 2 distinct pdf_texts
+      'display-eq-Equ2'
+      'display-eq-Equ1'
+  521_2026_12344_MS.docx: 170 distinct pdf_texts
+      'inline-eq-IEq139'
+      'inline-eq-IEq20'
+      'inline-eq-IEq34'
+      'inline-eq-IEq131'
+      'inline-eq-IEq74'
+  521_2026_12379_MS.docx: 8 distinct pdf_texts
+      'display-eq-Equ2'
+      'display-eq-Equ4'
+      'display-eq-Equ1'
+      'display-eq-Equ8'
+      'display-eq-Equ3'
+  521_2026_12431_MS.docx: 15 distinct pdf_texts
+      'inline-eq-IEq2'
+      'display-eq-Equd'
+      'display-eq-Equ4'
+      'display-eq-Equ1'
+      'display-eq-Equb'
+  MEC_70463_AM.docx: 3 distinct pdf_texts
+      ''
+      'mec70463-disp-0002'
+      'mec70463-disp-0001'
+  MEC_70470_AM.docx: 1 distinct pdf_texts
+      ''
+
+rows skipped (no docx_text): 0
+distinct docx_text values per file:
+  10257_2026_743_MS.docx: 34 distinct docx_texts
+      'Pr'
+      'Pro'
+      'Sr'
+  289_2026_6571_MS.docx: 7 distinct docx_texts
+      'Epoxide content (mol%) = A_2.70 / A_2.70 + A_5.10'
+      'L'
+      'L_0'
+  40998_2026_1143_MS.docx: 1 distinct docx_texts
+      '(MathType equation)'
+  40998_2026_1158_MS.docx: 1 distinct docx_texts
+      '(MathType equation)'
+  41315_2026_544_MS.docx: 51 distinct docx_texts
+      'M_a_i (Calc) = T_total = F_s r_1 (x_3 / l_1) sin (γ) + F_l r_2 sin (ψ)'
+      'θ _ a'
+      'K _ s'
+  41315_2026_569_MS.docx: 53 distinct docx_texts
+      'P_i = T^3 / 2 / sqrt 2 ρA'
+      'd (n_i -1, n_i)'
+      'D'
+  42452_2026_8948_MS.docx: 84 distinct docx_texts
+      'P_i,t^buy'
+      'p_t^grid'
+      '0≤ φ_i,t^sell + φ_i,t^buy ≤1'
+  42452_2026_8956_MS.docx: 2 distinct docx_texts
+      'UV=(∑ Ui)/N'
+      'FL= Nu / Nt ×100'
+  521_2026_12344_MS.docx: 104 distinct docx_texts
+      'version'
+      'D'
+      'C'
+  521_2026_12379_MS.docx: 8 distinct docx_texts
+      "H'' = FFN (LayerNorm (H')) + H'"
+      'MHSA (H) = Concat (head_1, …, head_H) ⋅ W^O'
+      'L_CE = - 1 / N ∑ i N ∑ c C y_ic ⋅ log (hat(y_ic))'
+  521_2026_12431_MS.docx: 16 distinct docx_texts
+      'Hu= (Pixel value ×Rescale Slope) +Rescale Intercept'
+      'F_rad = φ_radiomics (I_gray)'
+      'F_gabor = Σ G_θ (I_gray) , for θ∈{0°,45°,90°,135°}'
+  MEC_70463_AM.docx: 10 distinct docx_texts
+      'σ_e^2'
+      "G= Z Z^' / ∑ j=1 m 2p_j (1- p_j)"
+      'N (0,G σ_a^2)'
+  MEC_70470_AM.docx: 1 distinct docx_texts
+      't_y ≥'
+
+--- sample row 0 full dump ---
 {
+  "pair_order": 1,
+  "pair_kind": "anchor",
+  "segment_index": 1,
+  "before_anchor_label": "",
+  "next_anchor_label": "(1)",
   "docx_order": 1,
+  "docx_family": "display",
+  "docx_match_kind": "display_equation",
+  "docx_label": "(1)",
   "docx_text": "K_n = \u2211 K=1 M 1 (S_ti \u2265 T)",
   "pdf_order": 1,
+  "pdf_family": "display",
+  "pdf_label": "",
   "pdf_text": "display-eq-Equ1",
+  "pdf_page_number": 14,
+  "semantic_id": "display-eq-Equ1",
+  "visible_equation_label": "(1)",
   "visual_score": 2.315126,
   "match_score": 2.315126,
-  "pair_kind": "anchor",
-  "matcher_source": "global_alignment"
-}
-{
-  "docx_order": 1,
-  "docx_text": "K_n = \u2211 K=1 M 1 (S_ti \u2265 T)",
-  "pdf_order": 1,
-  "pdf_text": "display-eq-Equ1",
-  "visual_score": 2.315126,
-  "match_score": 2.315126,
-  "pair_kind": "anchor",
-  "matcher_source": "global_alignment"
-}
+  "low_confidence_visual": false,
+  "family_match": true,
+  "anchor_source": "semantic_equation_id",
+  "alignment_band_width": 24,
+  "context_anchor_source": "semantic_equation_id",
+  "context_group_id": "page14_display_(1)",
+  "context_match_reason": "semantic_equation_id",
+  "pair_context": "global_alignment",
+  "block_move_id": "",
+  "matcher_source": "global_alignment",
+  "comparison_pdf_order": 1,
+  "comparison_pdf_order_end": 1,
+  "pair_mode": "docx_vs_tagged",
+  "docx_path": "C:\\Users\\e416417\\Documents\\mathcompare\\watch\\10257_2026_743_MS.docx",
+  "pdf_path": "C:\\Users\\e416417\\Documents\\mathcompare\\watch\\10257_2026_743_OnlinePDF.pdf",
+  "pdf_orders": [
+    1
+  ],
+  "docx_item": {
+    "raw_order": 1,
+    "docx_math_id": "docx-eq-(1)",
+    "semantic_id": null,
+    "family": "display",
+    "family_reason": "equation_label",
+    "docx_match_kind": "display_equation",
+    "docx_match_kind_reason": "inferred",
+    "docx_source_kind": "omml",
+    "docx_context_kind": "display_equation",
+    "equation_label": "(1)",
+    "equation_label_occurrence": 1,
+    "local_math_run_type": "display_equation",
+    "mathtype": null,
+    "mathtype_width_pt": null,
+    "mathtype_height_pt": null,
+    "docx_page_number": 8,
+    "page_number": null,
+    "paragraph_number": 230,
+    "paragraph_index": 229,
+    "paragraph_math_count": 1,
+    "token_index": 0,
+    "math_text": "K_n = \u2211 K=1 M 1 (S_ti \u2265 T)",
+    "raw_math_text": "K _ n = 
