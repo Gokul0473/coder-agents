@@ -1,12 +1,26 @@
- overlap: set()
+overlap: set()
 train match_score: 0.14239 0.840328 2.41342
----------------------------------------------------------------------------
-KeyError                                  Traceback (most recent call last)
-/tmp/ipykernel_993/846404481.py in <cell line: 0>()
-     24 by_docx = defaultdict(list)
-     25 for r in train:
----> 26     by_docx[(r["docx_path"], r["docx_order"])].append(r["match_score"])
-     27 multiples = [k for k, v in by_docx.items() if len(v) > 1]
-     28 print(f"docx items with >1 row (multi-candidate): {len(multiples)}")
+docx items with >1 row (multi-candidate): 141
+total unique docx items: 735
 
-KeyError: 'match_score'
+example multi-row docx: ('C:\\Users\\e416417\\Documents\\mathcompare\\watch\\10257_2026_743_MS.docx', 1)
+{
+  "docx_order": 1,
+  "docx_text": "K_n = \u2211 K=1 M 1 (S_ti \u2265 T)",
+  "pdf_order": 1,
+  "pdf_text": "display-eq-Equ1",
+  "visual_score": 2.315126,
+  "match_score": 2.315126,
+  "pair_kind": "anchor",
+  "matcher_source": "global_alignment"
+}
+{
+  "docx_order": 1,
+  "docx_text": "K_n = \u2211 K=1 M 1 (S_ti \u2265 T)",
+  "pdf_order": 1,
+  "pdf_text": "display-eq-Equ1",
+  "visual_score": 2.315126,
+  "match_score": 2.315126,
+  "pair_kind": "anchor",
+  "matcher_source": "global_alignment"
+}
