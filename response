@@ -1,13 +1,5 @@
-STEP 1 — candidate dump sanity:
-599: rows 4422, distinct 3815, pdf_ocr 0, docx_ocr 0; docx_order 1 -> pdf {2:0.8524, 3:0.8465, 4:0.7005, 5:0.2354, 1:0.7277, 8:0.3914, 12:0.3032, 13:0.3108} (score spread = real negatives).
-1143: rows 172, distinct 83, pdf_ocr 0, docx_ocr 0; docx_order 7 -> [(7,0.9309) x2] (dup rows, no negative spread here).
-743: rows 15831, distinct 8614, pdf_ocr 0, docx_ocr 0; docx_order 5 -> pdf {6:0.2319, 7:0.4292, 5:0.2358, 4:0.55, 3:0.55} (real negatives).
-STEP 2 — Fix C: 1143 distinct non-None docx_ocr_text = 0; 1158 = 0. No sample exists; dumps carry zero MathType text (stub or unwired at dump time).
-STEP 3 — coverage: 12936 / 37263 (34.7%). OCR fills concentrate in 6 pairs only: 8948 1721/1721, 12344 7512/7512, 12483 3670/3670, 12431 33/33, MEC_70463 50/50, MEC_70470 1/1; other 10 pairs 0.
-STEP 4 — mystery files: git ls-files tracks dataset.jsonl + math_items_dataset.jsonl. Writers: run_raw_docx_tagged_compare.py:259 append_to_dataset, :13804 write_math_items_dataset, called :13869/:13876. scripts/run_inputs_mapping_batch.py writes neither (no matches).
-STEP 5 — verdict:
-1. Real negatives present? yes — 599 docx_order 1 spans 8 pdf_orders, scores 0.24-0.85.
-2. Fix C real text on 1143/1158? no — 0 non-None docx_ocr_text in both dumps.
-3. pdf_ocr coverage 34.7% (12936/37263), confined to 6/16 pairs.
-4. dataset.jsonl written by run_raw_docx_tagged_compare.py (append_to_dataset:259).
-5. Ready for Colab cross-encoder training? blocked-on-OCR-backfill — 10/16 pairs have zero pdf_ocr_text, all docx_ocr_text empty.
+1. run_raw_docx_tagged_compare.py:11749-11768: `if pdf_ocr_fill_enabled():` → venv from `.venv/Scripts/python.exe` (or MATHCOMPARE_VENV_PYTHON), cache `temp/pix2text_fill_cache`, then `enrich_docx_mathtype_ocr_texts(...)` + `fill_pdf_ocr_texts(pdf_items, pdf_exact_paths, ocr_cache_dir, venv_python)` in-place.
+2. No watch_output/ skip: fill loops pdf_items, `continue`s non-placeholders (:266) and missing crops (:271); per-crop cache files in cache_dir keyed by crop-bytes sha1 (:274-285). The `:329-331` multi-band latch only sets module-global _SPLIT_DISABLED (affects split path, not skipping).
+3. Batch re-runs all 16: run_inputs_mapping_batch.py has no skip/reuse — sorted specs → compare_raw_docx_to_tagged_pdf per pair (cand dumps stamped sequentially 12:59→17:40 on 10/9). Only :406 `if fixture_src.exists()` guards the _gt.json copy, not the run.
+4. fill_pdf_ocr_texts(pdf_items, pdf_exact_paths, cache_dir, venv_python=None) -> same list mutated (return pdf_items :334). No-OCR item keeps prior keys, gets only pdf_ocr_text=None (+texts/sub_bboxes=None), still cache-written (:316).
+5. Freshness does not explain it: both 599 and 8948 crops rendered fresh in one session (audit 20261009_122433; 599 pngs 12:56, 8948 pngs 12:59; pix2text cache untouched since 10/1). Coverage boundary (OCR up to MEC_70463 13:40→1:40pm, zero from 743 13:50 onward) with in-process batch order ⇒ cause is in-run state (Pix2Text backend/cache failure or split latch), not stale crops.
