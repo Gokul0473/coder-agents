@@ -1,239 +1,207 @@
-total rows: 1076
+Read MAPPING_IMPROVEMENT_PLAN.md last two sections first. Then do EXACTLY
+the steps below. No essays. No re-planning. No comparison-stage changes.
+No filename special-cases. No ML training in this round. No new pip
+packages. All work in run_raw_docx_tagged_compare.py and its helpers,
+plus scripts/run_inputs_mapping_batch.py.
 
-key presence across all rows:
-  alignment_band_width: 973/1076
-  anchor_source: 142/1076
-  before_anchor_label: 973/1076
-  block_move_id: 1062/1076
-  comparison_pdf_order: 1076/1076
-  comparison_pdf_order_end: 1076/1076
-  context_anchor_source: 988/1076
-  context_group_id: 988/1076
-  context_match_reason: 1076/1076
-  docx_family: 1076/1076
-  docx_item: 1076/1076
-  docx_label: 1076/1076
-  docx_match_kind: 1076/1076
-  docx_order: 1076/1076
-  docx_page_number: 10/1076
-  docx_path: 1076/1076
-  docx_text: 1076/1076
-  family_match: 1076/1076
-  lone_operator: 155/1076
-  low_confidence_pairing: 700/1076
-  low_confidence_visual: 972/1076
-  match_score: 972/1076
-  matched_pdf_item: 1076/1076
-  matched_pdf_items: 1076/1076
-  matcher_source: 1066/1076
-  moved_block_type: 244/1076
-  next_anchor_label: 973/1076
-  outer_delimiter_detail: 2/1076
-  outer_delimiter_mismatch: 2/1076
-  pair_context: 1066/1076
-  pair_id: 1076/1076
-  pair_kind: 1076/1076
-  pair_mode: 1076/1076
-  pair_order: 1076/1076
-  pdf_family: 1007/1076
-  pdf_label: 1007/1076
-  pdf_order: 1007/1076
-  pdf_orders: 1076/1076
-  pdf_page_number: 1007/1076
-  pdf_path: 1076/1076
-  pdf_text: 1007/1076
-  percent_paren_detail: 1/1076
-  percent_paren_mismatch: 1/1076
-  segment_index: 973/1076
-  semantic_id: 1007/1076
-  trailing_period_detail: 2/1076
-  trailing_period_mismatch: 2/1076
-  unbalanced_leading_delimiter: 19/1076
-  unbalanced_leading_delimiter_detail: 19/1076
-  unbalanced_leading_delimiter_side: 19/1076
-  visible_equation_label: 1007/1076
-  visual_score: 972/1076
+# STATE (established)
+- Shipped pipeline: run_raw_docx_tagged_compare.py:11334. Scoring is
+  visual-only: _compare_visual_features (2589) blended by
+  _context_pair_match_metadata (1579). Alignment: build_visual_alignment
+  (4136), align_monotonic_segment (3849).
+- PDF side: pdf_text is a placeholder for all items
+  (inline-eq-IEq*, display-eq-Equ*, or empty). No real math text.
+- DOCX side: real math for most files. Two files
+  (40998_2026_1143, 40998_2026_1158) are 100% "(MathType equation)"
+  stubs — BUT the existing MathType OLE → PNG renderer (added earlier,
+  working) already produces images for those items. Extend it to also
+  extract text if possible.
+- Pix2Text works locally with pre-seeded models in the .venv. Venv path
+  is documented in MAPPING_IMPROVEMENT_PLAN.md.
+- Current pipeline output records only CHOSEN pairs, no rejected
+  candidates. We need a candidate dump.
+- Prior attempt at splitting PDF blocks before alignment regressed 12/16
+  pairs because it renumbered tagged_order. DO NOT do that again.
 
-rows skipped (no pdf_text): 69
-distinct pdf_text values per file:
-  10257_2026_743_MS.docx: 141 distinct pdf_texts
-      'inline-eq-IEq20'
-      'inline-eq-IEq34'
-      'inline-eq-IEq131'
-      'inline-eq-IEq74'
-      'inline-eq-IEq110'
-  289_2026_6571_MS.docx: 7 distinct pdf_texts
-      'inline-eq-IEq2'
-      'display-eq-Equ2'
-      'display-eq-Equ1'
-      'inline-eq-IEq1'
-      'inline-eq-IEq3'
-  40998_2026_1143_MS.docx: 47 distinct pdf_texts
-      'inline-eq-IEq6'
-      'display-eq-Equp'
-      'display-eq-Equw'
-      'inline-eq-IEq3'
-      'display-eq-Equ11'
-  40998_2026_1158_MS.docx: 123 distinct pdf_texts
-      'inline-eq-IEq20'
-      'inline-eq-IEq34'
-      'inline-eq-IEq74'
-      'untagged-drawing-4'
-      'inline-eq-IEq27'
-  41315_2026_544_MS.docx: 62 distinct pdf_texts
-      'display-eq-Equ16'
-      'inline-eq-IEq6'
-      'inline-eq-IEq20'
-      'inline-eq-IEq57'
-      'inline-eq-IEq33'
-  41315_2026_569_MS.docx: 80 distinct pdf_texts
-      'inline-eq-IEq20'
-      'inline-eq-IEq34'
-      'inline-eq-IEq27'
-      'display-eq-Equ6'
-      'display-eq-Equ23'
-  42452_2026_8948_MS.docx: 139 distinct pdf_texts
-      'inline-eq-IEq20'
-      'inline-eq-IEq34'
-      'inline-eq-IEq74'
-      'inline-eq-IEq110'
-      'inline-eq-IEq27'
-  42452_2026_8956_MS.docx: 2 distinct pdf_texts
-      'display-eq-Equ2'
-      'display-eq-Equ1'
-  521_2026_12344_MS.docx: 170 distinct pdf_texts
-      'inline-eq-IEq139'
-      'inline-eq-IEq20'
-      'inline-eq-IEq34'
-      'inline-eq-IEq131'
-      'inline-eq-IEq74'
-  521_2026_12379_MS.docx: 8 distinct pdf_texts
-      'display-eq-Equ2'
-      'display-eq-Equ4'
-      'display-eq-Equ1'
-      'display-eq-Equ8'
-      'display-eq-Equ3'
-  521_2026_12431_MS.docx: 15 distinct pdf_texts
-      'inline-eq-IEq2'
-      'display-eq-Equd'
-      'display-eq-Equ4'
-      'display-eq-Equ1'
-      'display-eq-Equb'
-  MEC_70463_AM.docx: 3 distinct pdf_texts
-      ''
-      'mec70463-disp-0002'
-      'mec70463-disp-0001'
-  MEC_70470_AM.docx: 1 distinct pdf_texts
-      ''
+# GOAL
+Produce a training-ready dataset with (a) real text on both sides, (b)
+real negatives (rejected candidates), (c) ground-truth labels. No model
+training in this round — just data generation. The cross-encoder will be
+trained in a separate Colab step from the exported JSONL.
 
-rows skipped (no docx_text): 0
-distinct docx_text values per file:
-  10257_2026_743_MS.docx: 34 distinct docx_texts
-      'Pr'
-      'Pro'
-      'Sr'
-  289_2026_6571_MS.docx: 7 distinct docx_texts
-      'Epoxide content (mol%) = A_2.70 / A_2.70 + A_5.10'
-      'L'
-      'L_0'
-  40998_2026_1143_MS.docx: 1 distinct docx_texts
-      '(MathType equation)'
-  40998_2026_1158_MS.docx: 1 distinct docx_texts
-      '(MathType equation)'
-  41315_2026_544_MS.docx: 51 distinct docx_texts
-      'M_a_i (Calc) = T_total = F_s r_1 (x_3 / l_1) sin (γ) + F_l r_2 sin (ψ)'
-      'θ _ a'
-      'K _ s'
-  41315_2026_569_MS.docx: 53 distinct docx_texts
-      'P_i = T^3 / 2 / sqrt 2 ρA'
-      'd (n_i -1, n_i)'
-      'D'
-  42452_2026_8948_MS.docx: 84 distinct docx_texts
-      'P_i,t^buy'
-      'p_t^grid'
-      '0≤ φ_i,t^sell + φ_i,t^buy ≤1'
-  42452_2026_8956_MS.docx: 2 distinct docx_texts
-      'UV=(∑ Ui)/N'
-      'FL= Nu / Nt ×100'
-  521_2026_12344_MS.docx: 104 distinct docx_texts
-      'version'
-      'D'
-      'C'
-  521_2026_12379_MS.docx: 8 distinct docx_texts
-      "H'' = FFN (LayerNorm (H')) + H'"
-      'MHSA (H) = Concat (head_1, …, head_H) ⋅ W^O'
-      'L_CE = - 1 / N ∑ i N ∑ c C y_ic ⋅ log (hat(y_ic))'
-  521_2026_12431_MS.docx: 16 distinct docx_texts
-      'Hu= (Pixel value ×Rescale Slope) +Rescale Intercept'
-      'F_rad = φ_radiomics (I_gray)'
-      'F_gabor = Σ G_θ (I_gray) , for θ∈{0°,45°,90°,135°}'
-  MEC_70463_AM.docx: 10 distinct docx_texts
-      'σ_e^2'
-      "G= Z Z^' / ∑ j=1 m 2p_j (1- p_j)"
-      'N (0,G σ_a^2)'
-  MEC_70470_AM.docx: 1 distinct docx_texts
-      't_y ≥'
+# FIX A — Pix2Text on placeholder PDF items (additive, non-invasive)
+ 1. Add a new module math_pdf_ocr_fill.py at the repo root.
+ 2. Public function:
+      fill_pdf_ocr_texts(pdf_items, crops_dir, cache_dir, venv_python)
+          -> pdf_items'
+    Behavior:
+      - For each pdf item whose actual_text matches r'^(inline|display)-eq-'
+        OR is empty OR equals "-":
+          * load its crop PNG (prepare_visual_assets already produces
+            these; reuse the same path map)
+          * cache key = sha1(crop_bytes). If cached in cache_dir, load.
+          * else run Pix2Text via the .venv python (subprocess or direct
+            import if safe). Output LaTeX + MathML. Canonicalize via the
+            existing canonicalize(). Write cache entry.
+          * store on the item: pdf_ocr_text (str, canonical), and
+            pdf_ocr_raw (str, raw Pix2Text output for reference).
+          * if Pix2Text fails on that item, leave pdf_ocr_text = None,
+            log a warning, never raise.
+      - Return the updated list. Non-placeholder items are unchanged.
+ 3. Invoke fill_pdf_ocr_texts in compare_raw_docx_to_tagged_pdf right
+    after prepare_visual_assets, BEFORE build_visual_alignment. This
+    is a read-only enrichment: it adds fields, does not modify ids,
+    coords, tagged_order, or any existing field.
+ 4. Config flag: MATHCOMPARE_PDF_OCR_FILL (default true in dev, false in
+    prod). When false, behavior is byte-identical to today.
+ 5. Do NOT touch the scorer, the DP, or the refine passes. Pix2Text
+    output is only stored; it is not yet consumed.
 
---- sample row 0 full dump ---
-{
-  "pair_order": 1,
-  "pair_kind": "anchor",
-  "segment_index": 1,
-  "before_anchor_label": "",
-  "next_anchor_label": "(1)",
-  "docx_order": 1,
-  "docx_family": "display",
-  "docx_match_kind": "display_equation",
-  "docx_label": "(1)",
-  "docx_text": "K_n = \u2211 K=1 M 1 (S_ti \u2265 T)",
-  "pdf_order": 1,
-  "pdf_family": "display",
-  "pdf_label": "",
-  "pdf_text": "display-eq-Equ1",
-  "pdf_page_number": 14,
-  "semantic_id": "display-eq-Equ1",
-  "visible_equation_label": "(1)",
-  "visual_score": 2.315126,
-  "match_score": 2.315126,
-  "low_confidence_visual": false,
-  "family_match": true,
-  "anchor_source": "semantic_equation_id",
-  "alignment_band_width": 24,
-  "context_anchor_source": "semantic_equation_id",
-  "context_group_id": "page14_display_(1)",
-  "context_match_reason": "semantic_equation_id",
-  "pair_context": "global_alignment",
-  "block_move_id": "",
-  "matcher_source": "global_alignment",
-  "comparison_pdf_order": 1,
-  "comparison_pdf_order_end": 1,
-  "pair_mode": "docx_vs_tagged",
-  "docx_path": "C:\\Users\\e416417\\Documents\\mathcompare\\watch\\10257_2026_743_MS.docx",
-  "pdf_path": "C:\\Users\\e416417\\Documents\\mathcompare\\watch\\10257_2026_743_OnlinePDF.pdf",
-  "pdf_orders": [
-    1
-  ],
-  "docx_item": {
-    "raw_order": 1,
-    "docx_math_id": "docx-eq-(1)",
-    "semantic_id": null,
-    "family": "display",
-    "family_reason": "equation_label",
-    "docx_match_kind": "display_equation",
-    "docx_match_kind_reason": "inferred",
-    "docx_source_kind": "omml",
-    "docx_context_kind": "display_equation",
-    "equation_label": "(1)",
-    "equation_label_occurrence": 1,
-    "local_math_run_type": "display_equation",
-    "mathtype": null,
-    "mathtype_width_pt": null,
-    "mathtype_height_pt": null,
-    "docx_page_number": 8,
-    "page_number": null,
-    "paragraph_number": 230,
-    "paragraph_index": 229,
-    "paragraph_math_count": 1,
-    "token_index": 0,
-    "math_text": "K_n = \u2211 K=1 M 1 (S_ti \u2265 T)",
-    "raw_math_text": "K _ n = 
+# FIX B — Visual sub-splitting on the CROP ONLY (no tagged_order change)
+The Round 9/10 attempt failed because it renumbered tagged_order. This
+time, do not touch the item list at all. Instead, enrich each placeholder
+pdf item with a list of sub-crop OCR strings.
+
+ 1. Extend math_pdf_ocr_fill.py with:
+      split_crop_and_ocr(pdf_item, crop_image, venv_python)
+          -> list[str]
+    Behavior:
+      - Grayscale, Otsu threshold.
+      - Row-wise ink profile, smoothed with 3-row box filter.
+      - Dense bands: contiguous row ranges where profile > max(3, 0.10 *
+        profile.max()).
+      - Merge adjacent bands separated by < 3% of crop height.
+      - If <= 1 band: return [pix2text(crop)].
+      - If >= 2 bands AND item height > 1.5 * median_pdf_item_height for
+        this file: for each band, crop rows [start-2, end+2], run
+        Pix2Text, canonicalize, collect.
+      - If > 6 bands: return [pix2text(crop)] (reject over-split).
+      - Return the list in top-to-bottom order.
+ 2. In fill_pdf_ocr_texts, for every placeholder item, also call
+    split_crop_and_ocr and store the result as:
+      pdf_ocr_texts: list[str]  (may be length 1)
+    and store sub-bboxes as:
+      pdf_sub_bboxes: list[(y0, y1)] in page coordinates (map the row
+      ranges back via the existing crop-to-page transform).
+ 3. Cache sub-split results the same way (sha1 of crop bytes + split
+    params).
+ 4. Do NOT create new items. Do NOT renumber anything. Do NOT modify
+    pdf_items list length. The DP, refine passes, and output remain
+    untouched in this round.
+
+# FIX C — MathType docx text extraction (extend existing renderer)
+The existing MathType OLE → PNG renderer (added in an earlier round)
+already produces images for MathType items. Extend it to ALSO try to
+extract text.
+
+ 1. Find the existing renderer module (it was added for the docx
+    mathtype path — search for "oleObject" or "mathml" in the docx
+    extraction area, or check MAPPING_IMPROVEMENT_PLAN.md for the file
+    name).
+ 2. In addition to rendering to PNG, attempt:
+      a. MathML extraction from the OLE (the existing renderer may
+         already do this internally — reuse).
+      b. If MathML exists, convert to LaTeX (use an already-installed
+         local converter if present; if none, use sympy's mathml
+         parser or a pure-Python MathML-to-string walker).
+      c. Canonicalize via existing canonicalize().
+      d. Store on the docx item: docx_ocr_text (str, canonical),
+         docx_ocr_raw (str, pre-canonicalization).
+      e. If MathML is not present (older MTEF-only MathType), try the
+         OLE "Equation Native" stream as a best-effort text fallback;
+         if that fails, leave docx_ocr_text = None.
+ 3. No new pip packages. If a required converter is missing, skip the
+    sub-case cleanly.
+ 4. Do NOT touch the scoring, DP, or refine passes.
+
+# FIX D — Candidate dump mode in the batch runner
+ 1. In run_raw_docx_tagged_compare.py, add a module-level accumulator
+    that, when enabled, records every (docx_i, pdf_j) pair the DP
+    scored inside align_monotonic_segment (the same place match_cost is
+    computed; there is a gate `if not match_metadata["allowed"]` at
+    ~3937 — record the pair BEFORE that gate so rejected candidates are
+    captured too).
+ 2. Each record:
+      {
+        pair_id, docx_order, pdf_order,
+        docx_canonical: docx item's canonical_math_text or raw_math_text,
+        docx_ocr_text,  # from Fix C, may be None
+        pdf_canonical: pdf item's actual_text (placeholder),
+        pdf_ocr_text,   # from Fix A, may be None
+        pdf_ocr_texts,  # from Fix B, may be None or list
+        pdf_sub_bboxes, # from Fix B
+        docx_family, pdf_family,
+        docx_label, pdf_label,
+        docx_page_number, pdf_page_number,
+        docx_prev_text, docx_next_text,
+        pdf_before_text, pdf_after_text,
+        visual_score, match_score,
+        allowed,
+        segment_index,
+        docx_position_in_segment, pdf_position_in_segment,
+        src_docx_len, src_pdf_len,  # segment sizes
+      }
+ 3. Thread the accumulator through compare_raw_docx_to_tagged_pdf via
+    a kwarg dump_candidates_path=None. When None, existing behavior.
+ 4. In scripts/run_inputs_mapping_batch.py, add CLI flag
+    --dump-candidates <output_dir>. When set, for each of the 16
+    fixtures:
+      - run pipeline with the accumulator enabled
+      - write <output_dir>/<pair_id>_candidates.jsonl (one line per
+        scored pair)
+      - copy the fixture's expected_pairs from
+        tests/fixtures/mapping_pairs/<pair_id>.json into
+        <output_dir>/<pair_id>_gt.json
+
+# STEP E — Run and verify
+ 1. Run:
+      python scripts/run_inputs_mapping_batch.py --dump-candidates temp/cand_dump
+ 2. Verify per pair:
+      - candidates.jsonl exists, has > 1 row per docx_order (real
+        negatives, not duplicates)
+      - pdf_ocr_text is non-None on placeholder items
+      - docx_ocr_text is non-None for at least 50% of MathType docx items
+        in 1143 and 1158
+ 3. If any verification fails, report exactly which pair failed and
+    which field is missing. Do NOT tune. Do NOT re-run with different
+    parameters.
+
+# REPORTING
+Append "Round 15 — OCR fill + candidate dump" to
+MAPPING_IMPROVEMENT_PLAN.md with:
+  - files touched per fix (A, B, C, D)
+  - new config flag names
+  - per-pair: candidates.jsonl row count, % of placeholder pdf items
+    with pdf_ocr_text populated, % of MathType docx items with
+    docx_ocr_text populated
+  - confirmation that existing pipeline output is unchanged when flags
+    are off
+  - "Comparison stage untouched: YES."
+Under 100 lines.
+
+Final response: only
+ 1. Files touched per fix (A, B, C, D) — one line each.
+ 2. Per-pair table: candidate rows, pdf_ocr coverage %, docx_ocr
+    coverage %.
+ 3. Verification: are multi-candidate rows present? (yes/no)
+ 4. Confirmation: flags-off output byte-identical to before? (yes/no)
+ 5. "Comparison stage untouched: YES."
+Under 60 lines.
+
+# HARD RULES
+- Do NOT modify tagged_order. Ever.
+- Do NOT change pdf_items list length. Ever.
+- Do NOT change the comparison stage.
+- Do NOT change existing scoring weights, matcher, or refine passes.
+- Do NOT add filename special-cases.
+- Do NOT add new pip packages.
+- Do NOT train anything in this round.
+- Pix2Text calls must use the .venv python and must be cached to disk.
+- On any Pix2Text failure, log and leave the field None — never crash.
+- If MathML extraction is unavailable for a MathType item, leave
+  docx_ocr_text None and continue.
+- If Fix B produces > 6 bands on > 5% of items, disable Fix B
+  (return [pix2text(crop)]) and report.
+- If existing pipeline output changes when flags are off, that's a bug —
+  revert and report.
+- Keep the final response under 60 lines.
