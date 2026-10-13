@@ -1,5 +1,154 @@
-1. run_raw_docx_tagged_compare.py:11749-11768: `if pdf_ocr_fill_enabled():` → venv from `.venv/Scripts/python.exe` (or MATHCOMPARE_VENV_PYTHON), cache `temp/pix2text_fill_cache`, then `enrich_docx_mathtype_ocr_texts(...)` + `fill_pdf_ocr_texts(pdf_items, pdf_exact_paths, ocr_cache_dir, venv_python)` in-place.
-2. No watch_output/ skip: fill loops pdf_items, `continue`s non-placeholders (:266) and missing crops (:271); per-crop cache files in cache_dir keyed by crop-bytes sha1 (:274-285). The `:329-331` multi-band latch only sets module-global _SPLIT_DISABLED (affects split path, not skipping).
-3. Batch re-runs all 16: run_inputs_mapping_batch.py has no skip/reuse — sorted specs → compare_raw_docx_to_tagged_pdf per pair (cand dumps stamped sequentially 12:59→17:40 on 10/9). Only :406 `if fixture_src.exists()` guards the _gt.json copy, not the run.
-4. fill_pdf_ocr_texts(pdf_items, pdf_exact_paths, cache_dir, venv_python=None) -> same list mutated (return pdf_items :334). No-OCR item keeps prior keys, gets only pdf_ocr_text=None (+texts/sub_bboxes=None), still cache-written (:316).
-5. Freshness does not explain it: both 599 and 8948 crops rendered fresh in one session (audit 20261009_122433; 599 pngs 12:56, 8948 pngs 12:59; pix2text cache untouched since 10/1). Coverage boundary (OCR up to MEC_70463 13:40→1:40pm, zero from 743 13:50 onward) with in-process batch order ⇒ cause is in-run state (Pix2Text backend/cache failure or split latch), not stale crops.
+DATA_DIR = /content/drive/MyDrive/Colab Notebooks/cross-encoder/data/ocr_fill
+exists: True
+files: 32
+ 10257_2026_743_candidates.jsonl
+ 10257_2026_743_gt.json
+ 289_2026_6571_candidates.jsonl
+ 289_2026_6571_gt.json
+ 40998_2026_1143_candidates.jsonl
+ ... and 27 more
+
+
+//cell 2
+10257_2026_743: candidates=15831 gt_edges=141
+289_2026_6571: candidates=14 gt_edges=8
+40998_2026_1143: candidates=172 gt_edges=47
+40998_2026_1158: candidates=2125 gt_edges=124
+41315_2026_544: candidates=1049 gt_edges=62
+41315_2026_569: candidates=714 gt_edges=80
+41315_2026_572: candidates=0 gt_edges=0
+41315_2026_599: candidates=4422 gt_edges=123
+42452_2026_8948: candidates=1721 gt_edges=139
+42452_2026_8956: candidates=0 gt_edges=2
+521_2026_12344: candidates=7512 gt_edges=172
+521_2026_12379: candidates=0 gt_edges=8
+521_2026_12431: candidates=33 gt_edges=15
+521_2026_12483: candidates=3670 gt_edges=95
+MEC_70463: candidates=50 gt_edges=9
+MEC_70470: candidates=1 gt_edges=1
+
+total pairs: 16
+total candidate rows: 37314
+
+
+//cell 3
+gt files: 16
+
+--- 10257_2026_743_gt.json ---
+{
+  "pair_id": "10257_2026_743",
+  "docx": "inputs/UAT_v12/10257_2026_743_20260805_224956/10257_2026_743_MS.docx",
+  "pdf": "inputs/UAT_v12/10257_2026_743_20260805_224956/10257_2026_743_OnlinePDF.pdf",
+  "status": "PENDING_REVIEW",
+  "source": "baseline_cache",
+  "reference": "watch_output sidecar (legacy pipeline, UAT-reviewed)",
+  "reference_kind": "sidecar",
+  "expected_pairs": [
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      3,
+      3
+    ],
+    [
+      4,
+      4
+    ],
+    [
+      5,
+      5
+    ],
+    [
+      6,
+      6
+    ],
+    [
+      7,
+      7
+    ],
+    [
+      8,
+      8
+    ],
+    [
+      9,
+      9
+    ],
+    [
+      10,
+      10
+    ],
+    [
+      11,
+      11
+    ],
+    [
+      12,
+      12
+    ],
+    [
+      13,
+      13
+    ],
+    [
+      14,
+
+
+--- 289_2026_6571_gt.json ---
+{
+  "pair_id": "289_2026_6571",
+  "docx": "inputs/UAT_12344/289_2026_6571_MS.docx",
+  "pdf": "inputs/UAT_12344/289_2026_6571_OnlinePDF.pdf",
+  "status": "PENDING_REVIEW",
+  "source": "baseline_cache",
+  "reference": "watch_output sidecar (legacy pipeline, UAT-reviewed)",
+  "reference_kind": "sidecar",
+  "expected_pairs": [
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      3,
+      3
+    ],
+    [
+      4,
+      4
+    ],
+    [
+      5,
+      5
+    ],
+    [
+      6,
+      6
+    ],
+    [
+      7,
+      7
+    ],
+    [
+      8,
+      8
+    ]
+  ],
+  "docx_count": 8,
+  "pdf_count": 8,
+  "observed": {
+    "pair_id": "289_2026_6571",
+    "docx": "inputs/UAT_12344/289_2026_6571_MS.docx",
+    "pdf": "inputs/UAT_12344/289_2026_6571_OnlinePDF.pdf",
+    "source": "baseline_cache",
+ 
+
