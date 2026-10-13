@@ -1,88 +1,40 @@
-field names and sample values:
- allowed: True
- docx_canonical: 'Dj'
- docx_family: 'inline'
- docx_label: ''
- docx_next_text: 'denote the distance between the AMR and the static obstacle measured by the front-mounted ultrasoni...
- docx_ocr_text: None
- docx_order: 1
- docx_page_number: 5
- docx_position_in_segment: 0
- docx_prev_text: 'Let'
- match_score: 0.8523607015542691
- pair_id: '41315_2026_599'
- pdf_after_text: 'measured and let by in line-eq-IEq3 the and'
- pdf_before_text: 'between the AMR and the static obstacle timestep'
- pdf_canonical: 'inline-eq-IEq2'
- pdf_family: 'inline'
- pdf_label: ''
- pdf_ocr_text: 'ce~measure:p~j,~and~lenthe~left~ar'
- pdf_ocr_texts: ['ce~measure:p~j,~and~lenthe~left~ar']
- pdf_order: 2
- pdf_page_number: 5
- pdf_position_in_segment: 0
- pdf_sub_bboxes: [[658.307, 698.2763]]
- segment_index: 0
- src_docx_len: 9
- src_pdf_len: 5
- visual_score: 0.7990713436951283
+skip 41315_2026_572: 0 candidates
+skip 42452_2026_8956: 0 candidates
+skip 521_2026_12379: 0 candidates
 
---- second row (to see variation) ---
- allowed: True
- docx_canonical: 'Dj'
- docx_family: 'inline'
- docx_label: ''
- docx_next_text: 'denote the distance between the AMR and the static obstacle measured by the front-mounted ultrasoni...
- docx_ocr_text: None
- docx_order: 1
- docx_page_number: 5
- docx_position_in_segment: 0
- docx_prev_text: 'Let'
- match_score: 0.8465309569390506
- pair_id: '41315_2026_599'
- pdf_after_text: 'by in line-eq-IEq3 the and front-mounted in line-eq-IEq4'
- pdf_before_text: 'and the static obstacle timestep measured and let'
- pdf_canonical: 'inline-eq-IEq3'
- pdf_family: 'inline'
- pdf_label: ''
- pdf_ocr_text: 'lflaty~thv_l,j~ight'
- pdf_ocr_texts: ['lflaty~thv_l,j~ight']
- pdf_order: 3
- pdf_page_number: 5
- pdf_position_in_segment: 1
- pdf_sub_bboxes: [[658.313, 698.2819]]
- segment_index: 0
- src_docx_len: 9
- src_pdf_len: 5
- visual_score: 0.7602063795936711
+usable pairs: 13
+ 10257_2026_743: 15831 candidates, 141 gt
+ 289_2026_6571: 14 candidates, 8 gt
+ 40998_2026_1143: 172 candidates, 47 gt
+ 40998_2026_1158: 2125 candidates, 124 gt
+ 41315_2026_544: 1049 candidates, 62 gt
+ 41315_2026_569: 714 candidates, 80 gt
+ 41315_2026_599: 4422 candidates, 123 gt
+ 42452_2026_8948: 1721 candidates, 139 gt
+ 521_2026_12344: 7512 candidates, 172 gt
+ 521_2026_12431: 33 candidates, 15 gt
+ 521_2026_12483: 3670 candidates, 95 gt
+ MEC_70463: 50 candidates, 9 gt
+ MEC_70470: 1 candidates, 1 gt
+
+total candidate rows after K=10 cap: 8215
+ positives: 893
+ negatives: 7322
+
+train rows: 5292 (from 10 pairs)
+val rows: 2923 (from 3 pairs)
+val pair breakdown: {'41315_2026_544', '521_2026_12483', '41315_2026_599'}
+train pos/neg: 726/4566
+val pos/neg: 167/2756
 
 
-//next cell
-total rows: 4422
+//next cell:
+--- sample 0 ---
+[CLS] docx: Pro [SEP] docx_meta: fam=inline lbl= pg=9 pos=0 prev=Where T denotes the total number of transactions involving next=and [SEP] pdf: inline-eq-IEq2 [SEP] pdf_ocr: price_pro [SEP] pdf_meta: fam=inline lbl= pg=15 pos=3 before=denotes the total number of transactions involving and after=rep resents the price of a specific and [SEP] seg: idx=0 docx_len=5 pdf_len=5 visual=0.730 match=0.550
 
-field fill rates:
- allowed: 4422/4422 (100.0%)
- docx_canonical: 4422/4422 (100.0%)
- docx_family: 4422/4422 (100.0%)
- docx_label: 82/4422 (1.9%)
- docx_next_text: 3910/4422 (88.4%)
- docx_order: 4422/4422 (100.0%)
- docx_page_number: 4422/4422 (100.0%)
- docx_position_in_segment: 4422/4422 (100.0%)
- docx_prev_text: 3991/4422 (90.3%)
- match_score: 4422/4422 (100.0%)
- pair_id: 4422/4422 (100.0%)
- pdf_after_text: 4269/4422 (96.5%)
- pdf_before_text: 3400/4422 (76.9%)
- pdf_canonical: 4422/4422 (100.0%)
- pdf_family: 4422/4422 (100.0%)
- pdf_ocr_text: 4422/4422 (100.0%)
- pdf_ocr_texts: 4422/4422 (100.0%)
- pdf_order: 4422/4422 (100.0%)
- pdf_page_number: 4422/4422 (100.0%)
- pdf_position_in_segment: 4422/4422 (100.0%)
- pdf_sub_bboxes: 4422/4422 (100.0%)
- segment_index: 4422/4422 (100.0%)
- src_docx_len: 4422/4422 (100.0%)
- src_pdf_len: 4422/4422 (100.0%)
- visual_score: 4422/4422 (100.0%)
+--- sample 1 ---
+[CLS] docx: Pro [SEP] docx_meta: fam=inline lbl= pg=9 pos=0 prev=Where T denotes the total number of transactions involving next=and [SEP] pdf: inline-eq-IEq1 [SEP] pdf_ocr: pro [SEP] pdf_meta: fam=inline lbl= pg=15 pos=4 before=T denotes the total number of transactions involving after=and rep resents the price of a specific [SEP] seg: idx=0 docx_len=5 pdf_len=5 visual=0.771 match=0.550
+
+--- sample 2 ---
+[CLS] docx: Pro [SEP] docx_meta: fam=inline lbl= pg=9 pos=0 prev=Where T denotes the total number of transactions involving next=and [SEP] pdf: inline-eq-IEq1 [SEP] pdf_ocr: pro [SEP] pdf_meta: fam=inline lbl= pg=15 pos=0 before=T denotes the total number of transactions involving after=and rep resents the price of a specific [SEP] seg: idx=3 docx_len=6 pdf_len=6 visual=0.771 match=0.550
+
