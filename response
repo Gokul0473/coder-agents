@@ -1,22 +1,14 @@
- Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-config.json: 100% 794/794 [00:00<00:00, 87.4kB/s]tokenizer_config.json: 100% 1.33k/1.33k [00:00<00:00, 128kB/s]vocab.txt: 100% 232k/232k [00:00<00:00, 6.50MB/s]tokenizer.json: 100% 711k/711k [00:00<00:00, 30.4MB/s]special_tokens_map.json: 100% 132/132 [00:00<00:00, 14.6kB/s]model.safetensors: reconstructing file: 100% 90.9MB / 90.9MB, 8.87MB/s  model.safetensors: downloading bytes:  86.0MB, 8.20MB/s  Loading weights: 100% 105/105 [00:00<00:00, 2998.34it/s]device: cuda
-pos_weight: 7.289
-epoch 1: train_loss=1.4291 val_auc=0.7788
-epoch 2: train_loss=0.9689 val_auc=0.8022
-epoch 3: train_loss=0.7870 val_auc=0.7939
-
-best val AUC: 0.8022
-saved model + tokenizer
-
-
-//next cell:
-=== per-file precision@1 ===
-pair                     baseline  cross-enc
-41315_2026_544              0.228      0.152 (baseline 18/79, ce 12/79)
-41315_2026_599              0.148      0.172 (baseline 18/122, ce 21/122)
-521_2026_12483              0.086      0.086 (baseline 9/105, ce 9/105)
-
-OVERALL baseline p@1: 0.1471 (45/306)
-OVERALL ce p@1: 0.1373 (42/306)
-delta: -0.0098
+pair                       n    mean  median     p25     p75
+10257_2026_743           229   0.000   0.000   0.000   0.000
+289_2026_6571              7   0.238   0.333   0.000   0.333
+40998_2026_1143           22   0.000   0.000   0.000   0.000
+40998_2026_1158          170   0.000   0.000   0.000   0.000
+41315_2026_544            53   0.352   0.000   0.000   1.000
+41315_2026_569           104   0.199   0.000   0.000   0.333
+41315_2026_599           140   0.074   0.000   0.000   0.125
+42452_2026_8948          121   0.095   0.000   0.000   0.200
+521_2026_12344           302   0.242   0.000   0.000   0.333
+521_2026_12431             9   0.248   0.167   0.143   0.333
+521_2026_12483            48   0.036   0.000   0.000   0.111
+MEC_70463                  6   0.333   0.000   0.000   1.000
+MEC_70470                  1   0.000   0.000   0.000   0.000
