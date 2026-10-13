@@ -1,16 +1,13 @@
-1.1 math_pdf_ocr_fill.py: YES, 11919 bytes. defs: pdf_ocr_fill_enabled:28, _is_placeholder_pdf_text:37, _sha1_bytes:44, _cache_path:48, _load_pix2text:52, _pix2text_raw:80, _canonicalize_ocr:111, _ink_bands:123, _page_y_range:156, split_crop_and_ocr:174, fill_pdf_ocr_texts:249. Both fill_pdf_ocr_texts + split_crop_and_ocr DEFINED.
-1.2 scripts/run_inputs_mapping_batch.py --dump-candidates: YES. argparse line 327 type=Path metavar=OUTPUT_DIR; handler 338-341 mkdir+setdefault MATHCOMPARE_PDF_OCR_FILL=1; per-pair 372-374 cand_path + 376-382 compare_raw_docx_to_tagged_pdf(..., dump_candidates_path=cand_path).
-1.3 run_raw_docx_tagged_compare.py: dump_candidates 11701,11729,12240,12241; pdf_ocr_text 51,3961,3962,11763; docx_ocr_text 3959; MATHCOMPARE_PDF_OCR_FILL NOT_FOUND (flag lives in math_pdf_ocr_fill.py:29 + batch:341); fill_pdf_ocr_texts 51,11763.
-1.4 OLE renderer: docx_mathtype_ole.py. Beyond PNG render: _mathml_snippet_from_bytes:276, _mathml_to_latex:288, _extract_mathml_from_ole:297, _equation_native_ascii_fallback:307, enrich_docx_mathtype_ocr_texts:327.
-2.1 git status --short: M dataset.jsonl; M docx_mathtype_ole.py; M math_items_dataset.jsonl; M run_raw_docx_tagged_compare.py; M scripts/run_inputs_mapping_batch.py; ?? math_pdf_ocr_fill.py
-2.2 git diff --stat: 5 files, 2050 insertions(+): dataset.jsonl 24, docx_mathtype_ole.py 99, math_items_dataset.jsonl 1782, run_raw_docx_tagged_compare.py 118, scripts/run_inputs_mapping_batch.py 27.
-3.1 temp/cand_dump/: YES, 32 files = 16 pairs x (_candidates.jsonl + _gt.json), e.g. 41315_2026_599_candidates.jsonl/_gt.json.
-3.2 pix2text cache: YES, pix2text_fill_cache files=298.
-3.3 MAPPING_IMPROVEMENT_PLAN.md Round 15: MISSING.
-4. py_compile: math_pdf_ocr_fill.py OK; scripts/run_inputs_mapping_batch.py OK; run_raw_docx_tagged_compare.py OK.
-5. Verdicts:
-- Complete on disk: A, B, D (module+defs+wiring+flag+handler+dump plumbing present).
-- Partially written: C (OLE MathML/MTEF-to-text helpers present; wiring into comparison via docx_ocr_text:3959 present but live effect unverified read-only).
-- Untouched: Round 15 plan section; dataset jsonl outputs are byproduct modifications, not new logic.
-- Working tree: NOT clean, uncommitted edits (5 modified + 1 untracked above).
-- Syntax errors: none (all 3 py_compile OK).
+STEP 1 — candidate dump sanity:
+599: rows 4422, distinct 3815, pdf_ocr 0, docx_ocr 0; docx_order 1 -> pdf {2:0.8524, 3:0.8465, 4:0.7005, 5:0.2354, 1:0.7277, 8:0.3914, 12:0.3032, 13:0.3108} (score spread = real negatives).
+1143: rows 172, distinct 83, pdf_ocr 0, docx_ocr 0; docx_order 7 -> [(7,0.9309) x2] (dup rows, no negative spread here).
+743: rows 15831, distinct 8614, pdf_ocr 0, docx_ocr 0; docx_order 5 -> pdf {6:0.2319, 7:0.4292, 5:0.2358, 4:0.55, 3:0.55} (real negatives).
+STEP 2 — Fix C: 1143 distinct non-None docx_ocr_text = 0; 1158 = 0. No sample exists; dumps carry zero MathType text (stub or unwired at dump time).
+STEP 3 — coverage: 12936 / 37263 (34.7%). OCR fills concentrate in 6 pairs only: 8948 1721/1721, 12344 7512/7512, 12483 3670/3670, 12431 33/33, MEC_70463 50/50, MEC_70470 1/1; other 10 pairs 0.
+STEP 4 — mystery files: git ls-files tracks dataset.jsonl + math_items_dataset.jsonl. Writers: run_raw_docx_tagged_compare.py:259 append_to_dataset, :13804 write_math_items_dataset, called :13869/:13876. scripts/run_inputs_mapping_batch.py writes neither (no matches).
+STEP 5 — verdict:
+1. Real negatives present? yes — 599 docx_order 1 spans 8 pdf_orders, scores 0.24-0.85.
+2. Fix C real text on 1143/1158? no — 0 non-None docx_ocr_text in both dumps.
+3. pdf_ocr coverage 34.7% (12936/37263), confined to 6/16 pairs.
+4. dataset.jsonl written by run_raw_docx_tagged_compare.py (append_to_dataset:259).
+5. Ready for Colab cross-encoder training? blocked-on-OCR-backfill — 10/16 pairs have zero pdf_ocr_text, all docx_ocr_text empty.
