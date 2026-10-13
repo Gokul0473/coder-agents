@@ -1,154 +1,28 @@
-DATA_DIR = /content/drive/MyDrive/Colab Notebooks/cross-encoder/data/ocr_fill
-exists: True
-files: 32
- 10257_2026_743_candidates.jsonl
- 10257_2026_743_gt.json
- 289_2026_6571_candidates.jsonl
- 289_2026_6571_gt.json
- 40998_2026_1143_candidates.jsonl
- ... and 27 more
-
-
-//cell 2
-10257_2026_743: candidates=15831 gt_edges=141
-289_2026_6571: candidates=14 gt_edges=8
-40998_2026_1143: candidates=172 gt_edges=47
-40998_2026_1158: candidates=2125 gt_edges=124
-41315_2026_544: candidates=1049 gt_edges=62
-41315_2026_569: candidates=714 gt_edges=80
-41315_2026_572: candidates=0 gt_edges=0
-41315_2026_599: candidates=4422 gt_edges=123
-42452_2026_8948: candidates=1721 gt_edges=139
-42452_2026_8956: candidates=0 gt_edges=2
-521_2026_12344: candidates=7512 gt_edges=172
-521_2026_12379: candidates=0 gt_edges=8
-521_2026_12431: candidates=33 gt_edges=15
-521_2026_12483: candidates=3670 gt_edges=95
-MEC_70463: candidates=50 gt_edges=9
-MEC_70470: candidates=1 gt_edges=1
-
-total pairs: 16
-total candidate rows: 37314
-
-
-//cell 3
-gt files: 16
-
---- 10257_2026_743_gt.json ---
-{
-  "pair_id": "10257_2026_743",
-  "docx": "inputs/UAT_v12/10257_2026_743_20260805_224956/10257_2026_743_MS.docx",
-  "pdf": "inputs/UAT_v12/10257_2026_743_20260805_224956/10257_2026_743_OnlinePDF.pdf",
-  "status": "PENDING_REVIEW",
-  "source": "baseline_cache",
-  "reference": "watch_output sidecar (legacy pipeline, UAT-reviewed)",
-  "reference_kind": "sidecar",
-  "expected_pairs": [
-    [
-      1,
-      1
-    ],
-    [
-      2,
-      2
-    ],
-    [
-      3,
-      3
-    ],
-    [
-      4,
-      4
-    ],
-    [
-      5,
-      5
-    ],
-    [
-      6,
-      6
-    ],
-    [
-      7,
-      7
-    ],
-    [
-      8,
-      8
-    ],
-    [
-      9,
-      9
-    ],
-    [
-      10,
-      10
-    ],
-    [
-      11,
-      11
-    ],
-    [
-      12,
-      12
-    ],
-    [
-      13,
-      13
-    ],
-    [
-      14,
-
-
---- 289_2026_6571_gt.json ---
-{
-  "pair_id": "289_2026_6571",
-  "docx": "inputs/UAT_12344/289_2026_6571_MS.docx",
-  "pdf": "inputs/UAT_12344/289_2026_6571_OnlinePDF.pdf",
-  "status": "PENDING_REVIEW",
-  "source": "baseline_cache",
-  "reference": "watch_output sidecar (legacy pipeline, UAT-reviewed)",
-  "reference_kind": "sidecar",
-  "expected_pairs": [
-    [
-      1,
-      1
-    ],
-    [
-      2,
-      2
-    ],
-    [
-      3,
-      3
-    ],
-    [
-      4,
-      4
-    ],
-    [
-      5,
-      5
-    ],
-    [
-      6,
-      6
-    ],
-    [
-      7,
-      7
-    ],
-    [
-      8,
-      8
-    ]
-  ],
-  "docx_count": 8,
-  "pdf_count": 8,
-  "observed": {
-    "pair_id": "289_2026_6571",
-    "docx": "inputs/UAT_12344/289_2026_6571_MS.docx",
-    "pdf": "inputs/UAT_12344/289_2026_6571_OnlinePDF.pdf",
-    "source": "baseline_cache",
- 
-
+field names:
+ allowed: True
+ docx_canonical: 'Dj'
+ docx_family: 'inline'
+ docx_label: ''
+ docx_next_text: 'denote the distance between the AMR and the static obstacle measured by the fro...
+ docx_ocr_text: None
+ docx_order: 1
+ docx_page_number: 5
+ docx_position_in_segment: 0
+ docx_prev_text: 'Let'
+ match_score: 0.8523607015542691
+ pair_id: '41315_2026_599'
+ pdf_after_text: 'measured and let by in line-eq-IEq3 the and'
+ pdf_before_text: 'between the AMR and the static obstacle timestep'
+ pdf_canonical: 'inline-eq-IEq2'
+ pdf_family: 'inline'
+ pdf_label: ''
+ pdf_ocr_text: 'ce~measure:p~j,~and~lenthe~left~ar'
+ pdf_ocr_texts: ['ce~measure:p~j,~and~lenthe~left~ar']
+ pdf_order: 2
+ pdf_page_number: 5
+ pdf_position_in_segment: 0
+ pdf_sub_bboxes: [[658.307, 698.2763]]
+ segment_index: 0
+ src_docx_len: 9
+ src_pdf_len: 5
+ visual_score: 0.7990713436951283
