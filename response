@@ -1,40 +1,22 @@
-skip 41315_2026_572: 0 candidates
-skip 42452_2026_8956: 0 candidates
-skip 521_2026_12379: 0 candidates
+ Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+config.json: 100% 794/794 [00:00<00:00, 87.4kB/s]tokenizer_config.json: 100% 1.33k/1.33k [00:00<00:00, 128kB/s]vocab.txt: 100% 232k/232k [00:00<00:00, 6.50MB/s]tokenizer.json: 100% 711k/711k [00:00<00:00, 30.4MB/s]special_tokens_map.json: 100% 132/132 [00:00<00:00, 14.6kB/s]model.safetensors: reconstructing file: 100% 90.9MB / 90.9MB, 8.87MB/s  model.safetensors: downloading bytes:  86.0MB, 8.20MB/s  Loading weights: 100% 105/105 [00:00<00:00, 2998.34it/s]device: cuda
+pos_weight: 7.289
+epoch 1: train_loss=1.4291 val_auc=0.7788
+epoch 2: train_loss=0.9689 val_auc=0.8022
+epoch 3: train_loss=0.7870 val_auc=0.7939
 
-usable pairs: 13
- 10257_2026_743: 15831 candidates, 141 gt
- 289_2026_6571: 14 candidates, 8 gt
- 40998_2026_1143: 172 candidates, 47 gt
- 40998_2026_1158: 2125 candidates, 124 gt
- 41315_2026_544: 1049 candidates, 62 gt
- 41315_2026_569: 714 candidates, 80 gt
- 41315_2026_599: 4422 candidates, 123 gt
- 42452_2026_8948: 1721 candidates, 139 gt
- 521_2026_12344: 7512 candidates, 172 gt
- 521_2026_12431: 33 candidates, 15 gt
- 521_2026_12483: 3670 candidates, 95 gt
- MEC_70463: 50 candidates, 9 gt
- MEC_70470: 1 candidates, 1 gt
-
-total candidate rows after K=10 cap: 8215
- positives: 893
- negatives: 7322
-
-train rows: 5292 (from 10 pairs)
-val rows: 2923 (from 3 pairs)
-val pair breakdown: {'41315_2026_544', '521_2026_12483', '41315_2026_599'}
-train pos/neg: 726/4566
-val pos/neg: 167/2756
+best val AUC: 0.8022
+saved model + tokenizer
 
 
 //next cell:
---- sample 0 ---
-[CLS] docx: Pro [SEP] docx_meta: fam=inline lbl= pg=9 pos=0 prev=Where T denotes the total number of transactions involving next=and [SEP] pdf: inline-eq-IEq2 [SEP] pdf_ocr: price_pro [SEP] pdf_meta: fam=inline lbl= pg=15 pos=3 before=denotes the total number of transactions involving and after=rep resents the price of a specific and [SEP] seg: idx=0 docx_len=5 pdf_len=5 visual=0.730 match=0.550
+=== per-file precision@1 ===
+pair                     baseline  cross-enc
+41315_2026_544              0.228      0.152 (baseline 18/79, ce 12/79)
+41315_2026_599              0.148      0.172 (baseline 18/122, ce 21/122)
+521_2026_12483              0.086      0.086 (baseline 9/105, ce 9/105)
 
---- sample 1 ---
-[CLS] docx: Pro [SEP] docx_meta: fam=inline lbl= pg=9 pos=0 prev=Where T denotes the total number of transactions involving next=and [SEP] pdf: inline-eq-IEq1 [SEP] pdf_ocr: pro [SEP] pdf_meta: fam=inline lbl= pg=15 pos=4 before=T denotes the total number of transactions involving after=and rep resents the price of a specific [SEP] seg: idx=0 docx_len=5 pdf_len=5 visual=0.771 match=0.550
-
---- sample 2 ---
-[CLS] docx: Pro [SEP] docx_meta: fam=inline lbl= pg=9 pos=0 prev=Where T denotes the total number of transactions involving next=and [SEP] pdf: inline-eq-IEq1 [SEP] pdf_ocr: pro [SEP] pdf_meta: fam=inline lbl= pg=15 pos=0 before=T denotes the total number of transactions involving after=and rep resents the price of a specific [SEP] seg: idx=3 docx_len=6 pdf_len=6 visual=0.771 match=0.550
-
+OVERALL baseline p@1: 0.1471 (45/306)
+OVERALL ce p@1: 0.1373 (42/306)
+delta: -0.0098
