@@ -1,12 +1,21 @@
-cand_dump_v3 and cand_dump_v4 do **not exist** — they were never created. The most recent dump is **cand_dump_v2**, which has full OCR.
+Done. Everything reverted cleanly and documented.
 
-| dump | files | bytes | 599 rows | 599 OCR | 599 None |
-|------|------:|------:|---------:|--------:|---------:|
-| temp/cand_dump | 16 | 34,051,313 | 4422 | 0 | 4422 |
-| temp/cand_dump_v2 | 16 | 35,082,254 | 4422 | 4422 | 0 |
+**1. Step 1 finding:** NO preprocessing before Pix2Text. Crops written raw (`cv2.imwrite(gray)` at `:227`, split band `:259`, fallback read `crop_path` directly at `:338`). No binarization/connected-component crop/padding removal existed.
 
-The earlier "all 4422 None" report inspected **temp/cand_dump** (the pre-fix dump); **cand_dump_v2 still has 4422/4422 with OCR**.
+**2. Step 2 change (implemented → reverted):** Added `_preprocess_crop()` (grayscale→Otsu `THRESH_BINARY_INV`→largest dark CC→bbox+4px, blank-crop passthrough), applied at all 3 `_pix2text_raw` sites, bumped both cache keys to `|v2`/`|prep|v2`. **Reverted** — module git-diff is now empty (== committed state), no residual `_preprocess_crop`/`v2` refs.
 
-Most-recent dump (cand_dump_v2) coverage for the other hard pairs:
-- cand_dump_v2 41315_2026_544: 1049 rows, 1049 with OCR
-- cand_dump_v2 521_2026_12483: 3670 rows, 3670 with OCR
+**3. Step 3 jaccard table (GT positive pairs):**
+
+| pair | v2 median | v5 median |
+|---|---:|---:|
+| 41315_2026_599 | 0.0000 | 0.0000 |
+| 41315_2026_544 | 0.0000 | 0.0000 |
+| 521_2026_12483 | 0.0556 | 0.0000 |
+
+No improvement → **reverted** per rule.
+
+**4. 5 sample `pdf_ocr_text` from v5/599 (not cleaner — still prose/multi-line noise):** `'Pro'`, `'Dj'`, `'j'`, `'x'`, `'VL,R,j'` — confirms OCR reads glyphs from a clean equation but emits truncated/prose fragments; noise is semantic, not a crop-margin artifact.
+
+**5. Comparison stage untouched: YES.**
+
+Notes: `math_pdf_ocr_fill.py` fully reverted (absent from `git status`). `MAPPING_IMPROVEMENT_PLAN.md` has the new "Round 18b (REVERTED)" section at line 748 (append-only, ASCII). `dataset.jsonl`/`math_items_dataset.jsonl` show modified — that's the existing pipeline's own append side-effect from the `--dump-candidates` run, not a change I made. `temp/cand_dump_v5/` left on disk as evidence.
