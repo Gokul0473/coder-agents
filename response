@@ -1,21 +1,213 @@
-Done. Everything reverted cleanly and documented.
+# PIPELINE_REFERENCE.md
 
-**1. Step 1 finding:** NO preprocessing before Pix2Text. Crops written raw (`cv2.imwrite(gray)` at `:227`, split band `:259`, fallback read `crop_path` directly at `:338`). No binarization/connected-component crop/padding removal existed.
+Source of truth: on-disk code as of this document. Citations are `file:line`.
 
-**2. Step 2 change (implemented → reverted):** Added `_preprocess_crop()` (grayscale→Otsu `THRESH_BINARY_INV`→largest dark CC→bbox+4px, blank-crop passthrough), applied at all 3 `_pix2text_raw` sites, bumped both cache keys to `|v2`/`|prep|v2`. **Reverted** — module git-diff is now empty (== committed state), no residual `_preprocess_crop`/`v2` refs.
+---
 
-**3. Step 3 jaccard table (GT positive pairs):**
+## 1 � Entry points
 
-| pair | v2 median | v5 median |
-|---|---:|---:|
-| 41315_2026_599 | 0.0000 | 0.0000 |
-| 41315_2026_544 | 0.0000 | 0.0000 |
-| 521_2026_12483 | 0.0556 | 0.0000 |
+| What | Location | Summary |
+|------|----------|---------|
+| Full DOCX?tagged-PDF map | `run_raw_docx_tagged_compare.py:11554` `compare_raw_docx_to_tagged_pdf(docx_path, pdf_path, *, output_dir=None) -> dict` | Extract ? assets ? anchors ? DP alignment ? repair passes ? payload. |
+| CLI single pair | `run_raw_docx_tagged_compare.py:13443` `main(argv)` | Args: docx, pdf, output_dir; calls compare + `write_comparison_artifacts`. |
+| Batch (16 fixtures) | `scripts/run_inputs_mapping_batch.py:317` `main()` | Discovers live pairs via harness; calls compare + artifacts under `watch_output/inputs_mapping_audit_<stamp>/`. |
+| Watch mode | `tagged_watch.py:170` `process_watch_folder_once`; `tagged_watch.py:155` `_run_pair_comparison` | DOCX+tagged PDF ? compare; then comparison (`tagged_watch.py:327` `_augment_with_math_comparison` or artifacts-only if `skip_llm_compare`). |
+| Mapping result on disk | `run_raw_docx_tagged_compare.py:13383` | `raw_vs_tagged_alignment.json` (full result dict). Also `raw_docx_items.json`, `tagged_pdf_items.json`, summaries (`13375-13440`). Watch uses same via `write_comparison_artifacts` (`tagged_watch.py:307-321`). |
 
-No improvement → **reverted** per rule.
+---
 
-**4. 5 sample `pdf_ocr_text` from v5/599 (not cleaner — still prose/multi-line noise):** `'Pro'`, `'Dj'`, `'j'`, `'x'`, `'VL,R,j'` — confirms OCR reads glyphs from a clean equation but emits truncated/prose fragments; noise is semantic, not a crop-margin artifact.
+## 2 � Extraction
 
-**5. Comparison stage untouched: YES.**
+### DOCX
+- **Function:** `run_raw_docx_tagged_compare.py:567` `extract_raw_docx_math_items(docx_path) -> list[dict]`.
+- **Walk:** `paragraph_token_stream` per body paragraph (`600`); tokens `MATH_TEXT` / `MATH_IMAGE` (`602-603`).
+- **OMML path:** `token.text` ? `cleaned_docx_math_text` (`683-689`) ? `canonical_math_text` via `canonicalize_math_text_for_similarity` (`719`).
+- **MathType path:** OLE image token; `cleaned_text` alt or `"(MathType equation)"` (`634-654`); `docx_source_kind`=`mathtype`, `mathtype` flag.
+- **Post-passes (same function):** `_reconcile_docx_items_with_full_latex` (`733`), `promote_standalone_inline_to_display` (`734`), label repairs (`735-738`), `annotate_docx_context_kinds` / `annotate_docx_context_metadata` (`739-740`), `assign_docx_math_ids` (`741`), `enrich_mathtype_ole_embedding_paths` (`742`).
+- **Representative item keys:** `raw_order`, `paragraph_index`, `docx_page_number`, `family`, `equation_label`, `raw_math_text`, `cleaned_math_text`, `canonical_math_text`, `docx_match_kind`, `docx_source_kind`, `omml_xml`, `mathtype_*`, context fields from annotation passes.
 
-Notes: `math_pdf_ocr_fill.py` fully reverted (absent from `git status`). `MAPPING_IMPROVEMENT_PLAN.md` has the new "Round 18b (REVERTED)" section at line 748 (append-only, ASCII). `dataset.jsonl`/`math_items_dataset.jsonl` show modified — that's the existing pipeline's own append side-effect from the `--dump-candidates` run, not a change I made. `temp/cand_dump_v5/` left on disk as evidence.
+### PDF (tagged)
+- **Function:** `tagged_pdf_extractor.py:2121` `extract_tagged_pdf_math_items(pdf_path, *, render_scale=2.5) -> TaggedPdfMathExtractionResult`.
+- **Walk:** `StructTreeRoot` required (`2130-2137`); recursive `visit_structure_element` (`2171+`).
+- **Placeholder ids:** `ActualText` on structure node (`2190`); `semantic_id = _semantic_id_from_semantic_text(actual_text|alt|title)` (`2346`); classifier `_semantic_text_is_equation_identifier` matches `display-eq-Equ*`, `inline-eq-IEq*`, Wiley ids (`1854-1869`, `1834-1838`).
+- **Item fields:** `tagged_order`, `page_number`, `actual_text`, `semantic_id`, `family`, `bbox_points` `{x0,y0,x1,y1}`, `bbox_pixels`, `bbox_source`, context text fields from extractor.
+
+### PDF coordinates
+- Union of MCID regions / ObjR / PlacedPDF bbox in page space (`2321` `node_bbox`); converted `page_bbox = _bbox_pdf_to_page_space` (`2344`); stored `bbox_points` (`2385-2390`). Fallback: `_estimate_bbox_from_neighbor_mcids` (`2301-2317`).
+- **Crop rect for assets:** `run_raw_docx_tagged_compare.py:12811` `_pdf_bbox_rect` reads `bbox_points`.
+
+### Post-extraction annotation
+- `tagged_pdf_extractor.py:1586` `refresh_tagged_pdf_dict_contexts` � fills missing PDF prose context using page text + bbox.
+- `run_raw_docx_tagged_compare.py:1439` `annotate_pdf_context_kinds` � sets `pdf_context_kind`, narrative/table grouping on PDF items.
+- Called from compare: `11563-11564`.
+
+---
+
+## 3 � Visual asset preparation
+
+- **Function:** `run_raw_docx_tagged_compare.py:12827` `prepare_visual_assets(docx_path, pdf_path, result, output_dir) -> dict`.
+- **DOCX PNG:** `review_assets/docx_items/docx_item_{raw_order:04d}.png` (`12834-12848`). OMML/text via `render_docx_math_text_png` (`12939-12946`). MathType: preview from zip media or `render_mathtype_ole_to_png` (`12859-12927`); sets `docx_render_path` (`12929`). Empty OMML placeholder render (`12849-12855`). `trim_png_whitespace` padding 12 (`12900`, `12946`).
+- **PDF PNG:** `review_assets/pdf_items/pdf_item_{tagged_order:04d}_page_{page:03d}.png` (loose margin) and `review_assets/pdf_exact_items/pdf_exact_item_{tagged_order:04d}_page_{page:03d}.png` (tight) (`12960-13004`). Clip margins depend on height/source (`12963-12989`); pixmap scale 3.0 (`12996`, `13000`). `_tighten_pdf_math_rect` for exact crop (`12999`).
+- **Id ? path maps returned:** `docx_item_images`, `pdf_item_crops`, `pdf_exact_item_crops` (`13006-13010`). Scoring uses **exact** crops (`11599-11621`).
+- **Feature prep (scoring only):** `equation_support.py:672` `load_grayscale_array`; `3099` `normalized_ink_feature` (trim white, resize to 160�96 canvas, ink profiles, optional Canny edges).
+
+---
+
+## 4 � Anchoring and segmentation
+
+| Step | Function | Line | Role |
+|------|----------|------|------|
+| Label anchor candidates | `build_visible_label_anchor_candidates` | `2048` | Display DOCX label == PDF effective label + trust checks. |
+| Select label anchors | `select_visible_label_anchors` | `3684` | Unique labels locked; ambiguous via `select_max_weight_noncrossing_anchors` (`3724`). |
+| Orphan PDF labels | `build_orphan_pdf_label_anchor_candidates` | (grep ~3700s) | PDF label without DOCX partner. |
+| Moved blocks | `build_*_block_candidates`, `build_selected_moved_block_groups` | `11667-11678` | Table/narrative/symbol blocks removed before global DP. |
+| Visual display anchors | `build_visual_display_anchor_candidates` | `2661` | Visual ? `DISPLAY_ANCHOR_VISUAL_THRESHOLD` (0.78). |
+| MathType visual anchors | `build_mathtype_visual_anchor_candidates` | `2703` | Early display, strong visual only. |
+| Visual anchor pick | `select_max_weight_noncrossing_anchors` | `3647` | Non-crossing max-weight chain. |
+| Skip visual anchors | compare | `11729-11730` | If any `semantic_equation_id` anchor exists. |
+
+**Anchor:** dict with `docx_index`, `pdf_index`, `docx_order`, `pdf_order`, `anchor_source` (`visible_equation_label`, `semantic_equation_id`, `display_visual`, `orphan_pdf_label`, etc.).
+
+**Segmentation:** `build_visual_alignment` (`4144`) builds `anchor_bounds = anchors + synthetic end` (`4160-4167`); slices `docx_segment` / `pdf_segment` between anchor indices (`4173-4174`); runs `align_monotonic_segment` per segment (`4176-4186`); emits fixed `pair_kind=anchor` pairs at boundaries (`4214-4228`).
+
+**Tiers:** Unique printed labels treated as high-confidence locks (`3684-3712`); visual/mathtype anchors gated by thresholds and non-crossing selection; not a single numeric confidence field on all anchors.
+
+---
+
+## 5 � Scoring
+
+### Visual pairwise
+- `run_raw_docx_tagged_compare.py:2597` `_compare_visual_features(left, right) -> float` in [0,1].
+- Weighted sum (`2645-2656`): pixel 0.30, row 0.15, col 0.15, density 0.08, aspect 0.08, width 0.04, height 0.04, edge 0.10, edge_row 0.03, edge_col 0.03; `edge_density_similarity * 0.00` (`2657`) � **disabled**.
+
+### Context / metadata blend
+- `run_raw_docx_tagged_compare.py:1587` `_context_pair_match_metadata(docx_item, pdf_item, visual_score, ...)`.
+- Display label mismatch ? `allowed=False` (`1611-1618`). Trusted label match ? `match_score = max(visual, 0.99)` (`1629-1635`).
+- Default inline: `score = max(visual*0.30, 0.12 + 0.15*visual + 0.70*local_ctx)` (`1645`); `local_ctx` from `_prose_neighbor_score`.
+- Row label: terminal conflict blocks (`1655-1662`); strong match boosts to ~0.80-0.90+ (`1664-1668`).
+- Table vs narrative soft penalty `score *= 0.55` (`1682-1684`).
+- Fragile tokens: cap when `visual < LONE_TOKEN_VISUAL_FLOOR` (0.82) (`1697-1701`).
+- Constants: `LONE_TOKEN_PROSE_CAP` 0.55 (`77`), `DISPLAY_MISMATCH_PENALTY` 0.35 (`72`) used in DP cost via `_family_penalty` (`3834-3837`).
+
+### DP match cost (uses metadata score, not raw visual alone)
+- `align_monotonic_segment` (`3962-3968`): `match_cost = 1.0 - effective_score + family_penalty + position_penalty + page_penalty`.
+- Page penalty: `_page_alignment_penalty` (`1970`); `PAGE_ALIGNMENT_PENALTY_WEIGHT=0.12`, `ANCHOR_MAX_PAGE_OFFSET_MARGIN=1` (`1923-1924`).
+- High imbalance: skip inline match if `effective_score < HIGH_IMBALANCE_INLINE_MATCH_THRESHOLD` (0.81) when ratio ? `HIGH_IMBALANCE_RATIO` (5.0) (`3948-3954`).
+
+### Other thresholds (repair / anchors)
+- `LOW_CONFIDENCE_VISUAL_THRESHOLD` 0.58 (`67`) � flags aligned pairs (`4007`).
+- `DISPLAY_ANCHOR_VISUAL_THRESHOLD` 0.78 (`66`).
+- `apply_leftover_context_matches` min_score 0.24 (`11803-11808`, repeated later).
+
+### Parallel engine (does not drive shipped pairs)
+- `math_mapping.py:align_items` uses `MappingWeights` (`90-112`): visual=0.0, embedding=0.0 by default; env-tunable. Attached only via `attach_mapping_engine_result` (`11506`) � does not rewrite `comparison_pairs` (`11515-11516`).
+
+---
+
+## 6 � Assignment
+
+- **Algorithm:** Monotone DP with three moves (skip docx, skip pdf, align) per segment � `align_monotonic_segment` (`3903-3970`).
+- **Band:** `_alignment_state_allowed` (`3850-3854`): `expected_j = round(i * pdf_count / docx_count)`, require `|j - expected_j| <= band_width`. Band width `_alignment_band_width` (`3840-3847`): `WIDE_ALIGNMENT_BAND=24` if segment_index==1 or segment len>30, else `DEFAULT_ALIGNMENT_BAND=12` (`70-71`). If DP infeasible, band widened to `max(docx_count, pdf_count)` (`3979-3981`).
+- **Unmapped:** Backtrace produces `pair_kind` `docx_only` / `pdf_only` (`4019+`, `_make_docx_only_pair`).
+- **Post-DP repair order** (in `compare_raw_docx_to_tagged_pdf`, each often followed by `drop_pdf_only_pairs_for_claimed_orders`): `refine_aligned_pairs_local_swaps` (`11781`); `merge_docx_fixed_comparison_pairs` (`11784`); `apply_leftover_context_matches` (`11789`, `11795`, `11803`, `11886`, `11907`); `apply_ieq_table_block_alignment` (`11790`); `apply_dl_ontology_ieq_alignment` (`11793`, `11876`); `apply_ieq_gap_interpolation` (`11796`, `11920`); `apply_ieq_run_alignment` (`11797`); `apply_ieq_contiguous_block_alignment` (`11798`); `apply_display_inline_context_rescue` (`11815`); `apply_ieq_permuted_block_alignment` (`11822`, `11897`); `apply_ieq_row_group_monotonic_alignment` (`11834`); `unbind_non_monotonic_untrusted_pairs` (`11836`); `unbind_far_ieq_run_pairs` (`11840`); `apply_leftover_monotonic_visual_rescue` (`11844`); `apply_mathtype_untagged_drawing_matches` (`11852`); `fill_unpaired_in_reading_order` (multiple); `apply_unbind_weak_far_fragile_matches` (`11864`); `apply_dl_ontology_preamble_ieq_alignment` (`11877`); `unbind_zero_prose_owners_for_better_leftover` (`11882`, `11903`); `apply_ieq_prefix_hole_rebind` (`11922`); 599/1143/12483 conditional blocks (`11931-12061`); `pair_numbered_display_leading_fragments` (`12054`); `assign_final_pair_orders` (`12062`); flag passes `_flag_*` (`12063-12069`).
+
+---
+
+## 7 � Optional features (status)
+
+| Feature | Status | Evidence |
+|---------|--------|----------|
+| MathType OLE ? PNG | WIRED | `docx_mathtype_ole.py:229` `render_mathtype_ole_to_png`; `prepare_visual_assets` `12859-12927`; `extract_raw_docx_math_items` `742` `enrich_mathtype_ole_embedding_paths`. |
+| MathType OLE ? text | ABSENT | No `docx_ocr_text` / MathML extraction in `docx_mathtype_ole.py` (ends `266` `enrich_mathtype_ole_embedding_paths`). |
+| Pix2Text `pdf_ocr_text` | ABSENT | No `math_pdf_ocr_fill.py` in repo; no `pdf_ocr_fill` / `MATHCOMPARE_PDF_OCR_FILL` in `run_raw_docx_tagged_compare.py`. |
+| PDF block split (post-align repair) | PRESENT_BUT_UNUSED | `refine_split_pdf_blocks_after_alignment` `10951`; **no call sites** (only definition + `split_pdf_repair_stats` stub `11584`, `12097`). |
+| PDF split in moved-symbol DP | WIRED (symbol blocks) | `split_pdf_pair` move type ~`3059` (not pre-align item splitting). |
+| Candidate dump `--dump-candidates` | ABSENT | `scripts/run_inputs_mapping_batch.py:317-324` only `--rescore`; no dump flag. |
+| Cross-encoder reranking | ABSENT | No matches in `*.py` for cross-encoder/rerank. |
+| ML model in shipped mapper | ABSENT | Shipped path is visual features + rules; no model inference in `compare_raw_docx_to_tagged_pdf`. |
+| Embedding feature (shipped) | ABSENT | Not used in `_compare_visual_features` or DP. |
+| Embedding in `math_mapping` | PRESENT_BUT_UNUSED (default off) | `MappingConfig.enable_embedding_feature` default False (`131`); `MappingWeights.embedding` 0.0 (`112`); optional `sentence_transformers` import `math_mapping.py:1451`. |
+
+---
+
+## 8 � Comparison stage (reference)
+
+- **Consumer:** `tagged_math_compare.py:2150` `augment_result_with_comparison(result, output_dir, *, pair_kind=...)`.
+- **Invoked from:** `tagged_watch.py:639` `_augment_with_math_comparison` ? `augment_result_with_comparison` (`651`).
+- **Reads:** `result["comparison_pairs"]` (`2164`); `docx_items` / `pdf_items` by `docx_order` / `tagged_order` (`2176-2185`); crop paths under `output_dir/review_assets` via `_resolve_crops` (`2168`).
+- **Does not modify:** mapping fields per docstring (`2158-2159`).
+- **Writes:** `math_compare_mapping.json` (`3915` `_write_math_compare_mapping`); comparison review PDF (same module).
+- **Uses `alignment_pairs`?** Shipped compare sets both keys equal (`12123-12124`); comparison code uses **`comparison_pairs` only** (`2164`), not `alignment_pairs`.
+
+---
+
+## 9 � Output schema
+
+### `raw_vs_tagged_alignment.json` (top-level keys from `12090-12127`)
+`docx_path`, `pdf_path`, `status`, `comparison_order_basis`, counts, `split_pdf_repair_stats`, family/context count dicts, anchor/segment summaries, `anchors`, `segments`, `alignment_pairs`, `comparison_pairs` (same list), `docx_items`, `pdf_items`; optional `mapping_engine`, `unmapped_docx`, `unmapped_pdf`, `mapping_diagnostics`, `mapping_engine_error` from attach (`11539-11550`); optional `review_outputs` after artifacts.
+
+### Aligned pair (DP segment output, `3988-4017`)
+`pair_kind`, `segment_index`, `docx_order`, `pdf_order`, families/labels/texts, `visual_score`, `match_score`, `low_confidence_visual`, `low_confidence_pairing`, `context_*`, `semantic_id`, `pdf_page_number`, etc. Final pass adds `comparison_pdf_order` (`11378-11393`).
+
+### Consumers
+- **Comparison:** `comparison_pairs` + item lists + review_assets crops (`tagged_math_compare.py:2150+`).
+- **UAT / batch:** `scripts/run_inputs_mapping_batch.py:30-38` reads `comparison_pairs` for F1; fixtures use `expected_pairs` (`tests/fixtures/mapping_pairs/*.json`).
+- **Harness sidecar reference:** `alignment_pairs` in cached JSON (`mapping_pair_harness.py:314-318`).
+
+---
+
+## 10 � Configuration
+
+### Shipped mapper (`compare_raw_docx_to_tagged_pdf`)
+- **Env vars:** NOT_FOUND � `run_raw_docx_tagged_compare.py` has no `os.environ` reads.
+
+### Module constants (shipped mapper) � `run_raw_docx_tagged_compare.py:64-108`, `1923-1924`, `1742-1743`
+`DISPLAY_ANCHOR_VISUAL_THRESHOLD=0.78`, `LOW_CONFIDENCE_VISUAL_THRESHOLD=0.58`, `HIGH_IMBALANCE_INLINE_MATCH_THRESHOLD=0.81`, `HIGH_IMBALANCE_RATIO=5.0`, `DEFAULT_ALIGNMENT_BAND=12`, `WIDE_ALIGNMENT_BAND=24`, `DISPLAY_MISMATCH_PENALTY=0.35`, `LONE_TOKEN_VISUAL_FLOOR=0.82`, `LONE_TOKEN_PROSE_CAP=0.55`, `MATHTYPE_SKIP_COST=0.08`, `PAGE_ALIGNMENT_PENALTY_WEIGHT=0.12`, `ANCHOR_MAX_PAGE_OFFSET_MARGIN=1`, plus repair/layout constants (`_ADJACENT_PDF_SWAP_*`, etc.).
+
+### Add-on mapping engine (`attach_mapping_engine_result`)
+- `math_mapping.py:146-207` `MappingConfig.from_env`: `MATHCOMPARE_MAPPING_WEIGHT_*`, `MATHCOMPARE_MAPPING_CONFIDENCE_THRESHOLD`, `RESCUE_THRESHOLD`, `VISUAL_TOP_K`, `ENABLE_SEQUENCE_ALIGNMENT`, `ENABLE_EMBEDDING`, `EMBEDDING_MODEL`, `LABEL_CONFLICT_PENALTY`, `MONOTONIC_SWAP_MARGIN`, `PDF_READING_ORDER`, `MONOTONE_ASSIGNMENT`.
+
+### Test harness
+- `MATHCOMPARE_MAPPING_FIXTURE_MODE` (`tests/mapping_pair_harness.py:52`), `MATHCOMPARE_MAPPING_PAIRS` (`53`, `454-461`).
+
+### Watch
+- `WatchFolderConfig` / `watch_config.json` � `skip_llm_compare` etc. (`tagged_watch.py:301-312`); loaded via `equation_shared.load_watch_folder_config` (NOT_FOUND detail in this pass).
+
+---
+
+## 11 � Tests
+
+| Suite | Path | What it exercises |
+|-------|------|-------------------|
+| Mapping pair regression | `tests/test_mapping_pairs.py` | `mapping_pair_harness.evaluate_all` ? **`math_mapping.align_items`** (`338-341`), not `compare_raw_docx_to_tagged_pdf`. |
+| Shipped mapper unit/integration | `tests/test_raw_docx_tagged_compare.py` | Calls `compare_raw_docx_to_tagged_pdf`, `write_comparison_artifacts`. |
+| Mapping engine unit | `tests/test_mapping_engine.py` | `math_mapping` canonicalization/solver. |
+
+**Pair discovery:** `tests/mapping_pair_harness.py:441` `selected_pairs()` � scan `inputs/` (excludes `backup`, `modified_input`, `untagged_files`, `EQCompare`), one spec per `paper_id`, optional env filter.
+
+**Fixture shape:** `tests/fixtures/mapping_pairs/289_2026_6571.json` � `pair_id`, `docx`, `pdf`, `status`, `expected_pairs` as `[[docx_order, pdf_order], ...]`, `min_f1`, `max_unmapped_*`, `observed`, etc.
+
+**Commands (from repo root):**
+- Full pytest: `pytest` (`pytest.ini:1-8`).
+- Mapping pairs only: `pytest tests/test_mapping_pairs.py`.
+- Shipped compare tests: `pytest tests/test_raw_docx_tagged_compare.py`.
+- Batch audit: `python scripts/run_inputs_mapping_batch.py`.
+- Harness table: `python tests/mapping_pair_harness.py --table` (`mapping_pair_harness.py` module docstring `21-22`).
+- Subset pairs: `MATHCOMPARE_MAPPING_PAIRS=521_2026_12483 pytest tests/test_mapping_pairs.py` (`446-461`).
+
+---
+
+## 12 � Known breakages / dead code
+
+| Item | Notes |
+|------|-------|
+| `refine_split_pdf_blocks_after_alignment` | Defined `10951`; never called; `split_pdf_repair_stats` always `{attempted:0, accepted:0}`. |
+| `math_pdf_ocr_fill` / candidate dump | Not present in tree (Round 15 not on disk). |
+| `attach_mapping_engine_result` | Called `12128`; parallel `align_items` output stored in `mapping_engine` only. |
+| Pytest mapping suite vs production batch | **Different engines:** harness/batch F1 paths disagree unless batch is run manually on compare output (batch uses compare `359`; harness uses `align_items` `341`). |
+| `dataset.jsonl` / `math_items_dataset.jsonl` | NOT_FOUND in `.py` grep � not written by `write_comparison_artifacts`. |
+| `assign_pair_ids` | NOT_FOUND in `run_raw_docx_tagged_compare.py` (removed or never added on this branch). |
+
+---
+
+*End of PIPELINE_REFERENCE.md*
