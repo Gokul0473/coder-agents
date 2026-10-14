@@ -1,22 +1,12 @@
-STOP POINT 1 — diagnosis complete. The task's premise is disproved; halting here per the rules (no truncation site found → skip Step 2).
+cand_dump_v3 and cand_dump_v4 do **not exist** — they were never created. The most recent dump is **cand_dump_v2**, which has full OCR.
 
-**1. Step 1: truncation site** — **NEITHER**. Extraction and canonicalization are both correct.
-- `canonical=='Pro'` count: **0** — the example "Pro" fragment does not exist in this pair at all.
-- Extractor walks the full OMML tree: items 88/90/91 have raw lengths 94–100 chars with complete multi-term expressions (`P(V_LL(k)), P(V_LM(k)), P(V_LH(k))∈(0,1), ...`).
-- Only **7 of 141** items are short, and each is a genuine short symbol whose `raw` is legitimately that short (`'D _ j'`, `'y _ j'`, `'B _ s'`). `'D _ j' → 'Dj'` is correct whitespace/subscript collapsing, not truncation.
-- Mojibake count 0 in the actual Python strings (the `ΓÇª`/`╬▓` seen in the terminal were cp1252 display artifacts, not in the data).
+| dump | files | bytes | 599 rows | 599 OCR | 599 None |
+|------|------:|------:|---------:|--------:|---------:|
+| temp/cand_dump | 16 | 34,051,313 | 4422 | 0 | 4422 |
+| temp/cand_dump_v2 | 16 | 35,082,254 | 4422 | 4422 | 0 |
 
-**2. Step 1: 5 sample items raw vs canonical**
-- `'D _ j'` → `'Dj'`
-- `'x _ j =[ D _ j , V _ L,j , V _ R,j ] ^ ⊤'` → `'xj =[Dj, V_L,j, V_R,j]^⊤'`
-- `'y _ j ⊆{ NT , LT , RT },'` → `'yj ⊆{NT, LT, RT}'`
-- `'D≤ D _ crit'` → `'D<= D_crit'`
-- order 88 (100 chars) → full expression preserved
+The earlier "all 4422 None" report inspected **temp/cand_dump** (the pre-fix dump); **cand_dump_v2 still has 4422/4422 with OCR**.
 
-**3. Real root cause of the 0.000 jaccard (not the docx side):** `pdf_ocr_text` is **None for all 4422** candidate rows of 599 (0 non-empty). The docx side is clean and comparable — the PDF side simply has no OCR text, so there is nothing to jaccard against. This is the round-15 zero-coverage problem (599 never got crops OCR'd), not canonicalization.
-
-**Proposed fix (one line):** none on the docx side — fix the PDF OCR coverage/crop path for the 10 uncovered pairs instead.
-
-Steps 2–5 skipped (no truncation site; Step 3/4/5 are contingent on it). No code changed; diagnostic left at `temp/diag_docx_canon.py` (gitignored). Plan-append deferred (would be a partial Round 18 — Steps 2–5 did not run).
-
-Comparison stage untouched: YES.
+Most-recent dump (cand_dump_v2) coverage for the other hard pairs:
+- cand_dump_v2 41315_2026_544: 1049 rows, 1049 with OCR
+- cand_dump_v2 521_2026_12483: 3670 rows, 3670 with OCR
